@@ -720,7 +720,7 @@ deferred singleton class TreeGame : Screen, MyScreen
     spark("twinkle.png") : Image
     tree : Tree
     ticks : Int32
-    bg("bg3.jpg") : Image
+    bg("new_bg.jpg") : Image
     treepic("new_tree_base.png") : Image
     starpic("new_tree_star_glow_white_380.png") : Image
     tree_sparkle_map("tree_sparkle_map.png") : Bitmap
