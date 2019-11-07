@@ -1,55 +1,2138 @@
-uses Plasmacore
+#TODO: put dead check stuff in MyScreen
 
-Display( "Main" ).screen = MainScreen
-
-class MainScreen : Screen [singleton]
+deferred singleton class Launch : Screen
   PROPERTIES
+    ticks = 30 : Int32
+  METHODS
+    method init:
+      #Display.scale_to_fit(1024,768)
+      MainMenu
+      TreeGame
+
+    #method draw:
+
+    method update:
+      ticks--
+      if (ticks < 0)
+        replace_with(MainMenu, Screen.fade_between)
+      endIf
+endClass
+
+deferred singleton class CreditsMenu : BaseMenuScreen
+  METHODS
+    method init:
+      menu = Menu(Box(Corners(0,180,Display.size.x,Display.size.y - 40)))
+      menu.target = this
+      menu.add(MenuImage("title_credits.png"))
+      menu.add(MenuSpacer(40))
+      menu.add(MenuSpacer(20))
+      menu.add(MenuButton("Go Back"))
+      menu.add(MenuSpacer(60))
+
+    method delayed_execute (Object action):
+      println(".")
+      if (action == "Go Back")
+        #        pop
+      endIf
+endClass
+
+class BaseMenuScreen : Screen, MyScreen, MenuHost
+  PROPERTIES
+    menu : Menu
+    entry : Object
+
+    last_not_dead = -1 : Int64
+    countdown : Int32
 
   METHODS
-    method on_start
-      trace
-      change_state( InitialState() )
+    method on_resume:
+      menu.current_offset = Vector2.zero
+      menu.fly_in_right
 
-    method on( e:PointerEvent )
+    method on_activate:
+      menu.current_offset = Vector2.zero
+      menu.fly_in_right
 
-    method on_draw
+    method update:
+      Music.tick
+      menu.update
+      if (entry is null) return
+      countdown--
+      if (countdown > 0) return
+      delayed_execute(entry)
+      entry = null
 
-    method on_resize
-      # Called when the Display.size changes
-      trace Display.size
+    method delayed_execute (Object action):
+      # Override
 
-    method on_update
-      # Called 60 times a second
+    method immediate_execute (Object action):
+      # Override
+      menu.fly_out_left
+
+    method check_dead.Logical:
+      if (last_not_dead == -1) last_not_dead = running_ms
+      local var dead = false
+      if (running_ms - last_not_dead > 1000)
+        time_offset -= (running_ms - last_not_dead)
+        dead = true
+      endIf
+      last_not_dead = running_ms
+      return dead
+
+    method draw:
+      if (check_dead) return
+      TreeGame.bg.draw
+      FlakeManager.draw
+      menu.draw
+
+    method menu_selected (MenuEntry entry, Object identifier):
+      this.entry = entry
+      immediate_execute(entry)
+      countdown = 30
+
+    method on ( MouseEvent e ):
+      menu.on(e)
+endClass
+
+deferred singleton class MainMenu : Screen, MenuHost, MyScreen
+  PROPERTIES
+    menu : Menu
+    action : Object
+    countdown : Int32
+    #xform = Transform.identity : Transform #create_from(Radians(pi), Vector2(1,1), Vector2(1023,767)) : Transform
+  METHODS
+    method init:
+      #menu = Menu(Box(Vector2(Display.size.x/2,450),Vector2(0,748-450)))
+      menu = Menu(Box(Vector2(Display.size.x/2,160),Vector2(0,748-160-20)))
+      menu.target = this
+      menu.add(MenuImage("main_title.png"))
+      menu.add(MenuSpacer(40))
+      menu.add(MenuButton("Start"))
+      menu.add(MenuButton("High Scores"))
+      menu.add(MenuButton("Options"))
+      menu.add(MenuButton("Credits"))
+      TreeGame
+      Music
+
+    method on_resume:
+      menu.current_offset = Vector2.zero
+      menu.fly_in_right
+
+    method on_activate:
+      menu.current_offset = Vector2.zero
+      menu.fly_in_right
+
+    method update:
+      Music.tick
+      menu.update
+      if (action is null) return
+      countdown--
+      if (countdown > 0) return
+      local var identifier = action
+      action = null
+      if (identifier == "Start")
+        replace_with(TreeGame, Screen.fade_between)
+      elseIf (identifier == "Options")
+        push(OptionsMenu)
+      elseIf (identifier == "Credits")
+        push(CreditsMenu)
+      endIf
+    method draw:
+      TreeGame.bg.draw
+      FlakeManager.draw
+      menu.draw
+    method menu_selected (MenuEntry entry, Object identifier):
+      menu.fly_out_left
+      action = identifier
+      countdown = 30
+    method on ( MouseEvent e ):
+      menu.on(e)
+endClass
+
+deferred singleton class ScreenManager
+  PROPERTIES
+    flipped = false : Logical
+    xform = Transform.identity : Transform
+    time_current = running_ms : Int64
+    next_orientation = 0 : Int32
+    orientation_time = running_ms : Int64
+    flipping = false :Logical
+    flip_time : Int64
+  METHODS
+    method init:
+[if defined(IPHONE)]
+      xform = Transform.create_from(Radians(pi), Vector2(1,1), Display.size - Vector2(1,1))#Vector2(1023,767))
+      flipped = true
+      Input.flip = true
+      IPhone.orient = 3
+[endIf]
+    method flip (Logical v):
+      if (v == flipped) return
+
+      Input.flip = v
+      flip_time = running_ms
+      flipping = true
+      #{
+      if (v)
+        xform = Transform.create_from(Radians(pi), Vector2(1,1), Vector2(1023,767))
+      else
+        xform = Transform.identity
+      endIf
+      }#
+
+      if (v)
+        IPhone.orient = 3
+      else
+        IPhone.orient = 1
+      endIf
+
+      flipped = v
+    method update:
+      if (not flipping) return
+      local Real64 p = (running_ms - flip_time) / 750.0
+      if (p > 1)
+        p = 1
+        flipping = false
+      endIf
+      if (not flipped)
+        Transform.translate(Display.size * .5).push_camera_transform
+        xform = Transform.create_from(Radians(-pi * (1 - p)), Vector2(1,1), Vector2(0,0))
+        xform.push_camera_transform
+        Transform.translate(Display.size * -.5).push_camera_transform
+      else
+        Transform.translate(Display.size * .5).push_camera_transform
+        xform = Transform.create_from(Radians(pi * -p), Vector2(1,1), Vector2(0,0))#1023,767))
+        xform.push_camera_transform
+        Transform.translate(Display.size * -.5).push_camera_transform
+        if (p == 1)
+          xform = Transform.create_from(Radians(pi * p), Vector2(1,1), Display.size - Vector2(1,1))
+        endIf
+      endIf
+endClass
+
+overlaying aspect MyScreen
+  METHODS
+
+    method on (AccelerationEvent event):
+      #println(event.to_String + " " + event.orientation.to_String)
+      local Int32 o = sign(event.x)
+      if (abs(event.x) < 0.5) o = 0
+      if (o != ScreenManager.next_orientation)
+        ScreenManager.next_orientation = o
+        ScreenManager.orientation_time = running_ms + 1000
+      elseIf (o != 0)
+        if (ScreenManager.orientation_time < running_ms)
+          if (o == -1)
+            ScreenManager.flip(false)
+          else
+            ScreenManager.flip(true)
+          endIf
+        endIf
+      endIf
+
+      insertUnderlying
+
+    method draw:
+      if (ScreenManager.flipping)
+        ScreenManager.update
+      else
+        ScreenManager.xform.push_camera_transform
+      endIf
+      insertUnderlying
+      if (ScreenManager.flipping)
+        local var b = Box(0,-300,Display.size.x,300)
+        b.fill(Color.black)
+        b = Box(-300,-300,300,Display.size.y+600)
+        b.fill(Color.black)
+        b = Box(Display.size.x,-300,300,Display.size.y+600)
+        b.fill(Color.black)
+        b = Box(0,Display.size.y,Display.size.x,300)
+        b.fill(Color.black)
+      endIf
+endAspect
+
+deferred singleton class OptionsMenu : Screen, MenuHost, MyScreen
+  PROPERTIES
+    menu : Menu
+    action : MenuEntry
+    countdown : Int32
+  METHODS
+    method init:
+      menu = Menu(Box(Corners(0,180,Display.size.x,Display.size.y - 40))) # Vector2(Display.size.x/2,500),Vector2(0,748-500)))
+      menu.target = this
+      menu.add(MenuImage("title_options.png"))
+      menu.add(MenuSpacer(40))
+      menu.add(MenuSpacer(20))
+      menu.add(MenuButton("Turn Music Off"))
+      menu.add(MenuButton("Turn Sound Off"))
+      menu.add(MenuButton("Go Back"))
+      menu.add(MenuSpacer(60))
+    method on_activate:
+      menu.current_offset = Vector2.zero
+      menu.fly_in_right
+    method update:
+      Music.tick
+      menu.update
+      if (action is null) return
+      countdown--
+      if (countdown > 0) return
+      local var identifier = action.item.identifier
+      if (identifier == "Go Back")
+        if (previous_screen == MainMenu)
+          pop
+        else
+          pop(Screen.fade_between)
+        endIf
+      elseIf (identifier == "Turn Music On")
+        action.item.(MenuButton).text = "Turn Music Off"
+        Music.paused = false
+      elseIf (identifier == "Turn Music Off")
+        action.item.(MenuButton).text = "Turn Music On"
+        Music.paused = true
+      elseIf (identifier == "Turn Sound On")
+        action.item.(MenuButton).text = "Turn Sound Off"
+        SFX.enabled = true
+      elseIf (identifier == "Turn Sound Off")
+        action.item.(MenuButton).text = "Turn Sound On"
+        SFX.enabled = false
+      endIf
+      action = null
+    method draw:
+      TreeGame.bg.draw
+      FlakeManager.draw
+      menu.draw
+    method menu_selected (MenuEntry entry, Object identifier):
+      action = entry
+      countdown = 2
+      if (identifier == "Go Back")
+        menu.fly_out_left
+        countdown = 20
+      endIf
+    method on( MouseEvent e ):
+      menu.on(e)
+endClass
+
+deferred singleton class PauseMenu : Screen, MenuHost, MyScreen
+  PROPERTIES
+    menu : Menu
+    action : MenuEntry
+    countdown : Int32
+  METHODS
+    method init:
+      #menu = Menu(Box(Vector2(Display.size.x/2,350),Vector2(0,748-350)))
+      menu = Menu(Box(Corners(0,180,Display.size.x,Display.size.y - 40)))
+      menu.target = this
+      menu.add(MenuImage("title_paused.png"))
+      menu.add(MenuSpacer(30))
+      menu.add(MenuButton("Resume"))
+      menu.add(MenuButton("New Game"))
+      menu.add(MenuButton("Main Menu"))
+      menu.add(MenuSpacer(30))
+      menu.add(MenuButton("Turn Music Off"))
+      menu.add(MenuButton("Turn Sound Off"))
+    method on_activate:
+      menu.current_offset = Vector2.zero
+      menu.fly_in_bottom
+    method update:
+      Music.tick
+      menu.update
+      if (action is null) return
+      countdown--
+      if (countdown > 0) return
+      local var identifier = action.item.identifier
+      if (identifier == "Resume")
+        pop(Screen.fade_between)
+      elseIf (identifier == "New Game")
+        TreeGame.tree = Tree(17)
+        pop(Screen.fade_between)
+      elseIf (identifier == "Main Menu")
+        pop
+        replace_with(MainMenu, Screen.fade_between)
+      elseIf (identifier == "Turn Music On")
+        action.item.(MenuButton).text = "Turn Music Off"
+        Music.paused = false
+      elseIf (identifier == "Turn Music Off")
+        action.item.(MenuButton).text = "Turn Music On"
+        Music.paused = true
+      elseIf (identifier == "Turn Sound On")
+        action.item.(MenuButton).text = "Turn Sound Off"
+        SFX.enabled = true
+      elseIf (identifier == "Turn Sound Off")
+        action.item.(MenuButton).text = "Turn Sound On"
+        SFX.enabled = false
+      endIf
+      action = null
+    method draw:
+      TreeGame.bg.draw
+      FlakeManager.draw
+      menu.draw
+    method menu_selected (MenuEntry entry, Object identifier):
+      action = entry
+      countdown = 2
+      if (identifier == "Resume" or identifier == "New Game" or identifier == "Main Menu")
+        menu.fly_out_bottom
+        countdown = 20
+      endIf
+    method on( MouseEvent e ):
+      menu.on(e)
+endClass
+
+abstract class MenuItem
+  PROPERTIES
+  METHODS
+    method on_in:
+    method on_out:
+    method on_down:
+    method on_up:
+    method draw (Vector2 position):
+    method update:
+    method size.Vector2:
+      return Vector2(0,0)
+    method hitbox.Box:
+      return Box(0,0,0,0)
+    method identifier.Object:
+      return this
+endClass
+
+aspect MenuHost
+  METHODS
+    method menu_selected (MenuEntry entry, Object identifier):
+endAspect
+
+class MenuImage : MenuItem
+  PROPERTIES
+    img : Image
+  METHODS
+    method init (img):
+    method init (String filename):
+      img = Image(filename)
+    method draw (Vector2 position):
+      img.draw(position)
+    method size.Vector2:
+      return img.size
+endClass
+
+class MenuSpacer : MenuItem
+  PROPERTIES
+    _size : Vector2
+  METHODS
+    method init (_size):
+    method init (Int32 s):
+      _size = Vector2(s, s)
+    method size.Vector2:
+      return _size
+endClass
+
+class MenuButton : MenuItem
+  PROPERTIES
+    text : String
+    highlight : Logical
+
+    cur_scale : Real64
+    target_scale : Real64
+    locked = false : Logical
+
+    HIGHLIGHT = .99 : Real64
+    NORMAL = .90 : Real64
+
+  METHODS
+    method identifier.Object:
+      return text
+
+    method size.Vector2:
+      return MenuManager.img_button.size
+
+    method hitbox.Box:
+      return Box(Vector2(0,0), MenuManager.img_button.size).cropped(3)
+
+    method init (text):
+      cur_scale = NORMAL
+      target_scale = NORMAL
+
+    method draw (Vector2 position):
+      #MenuManager.img_button.handle = Handle.center
+      local var size = this.size
+      MenuManager.img_button.scale = cur_scale
+      local var s = MenuManager.img_button.size
+      s -= MenuManager.img_button.size * cur_scale
+      position += s * .5
+      size *= cur_scale
+      MenuManager.img_button.draw(position)
+      MenuManager.font.scale = cur_scale
+      MenuManager.font.color = Color.black
+      MenuManager.font.draw(text, position + size / 2 + Vector2(2,2))
+      MenuManager.font.color = Color.white
+      MenuManager.font.draw(text, position + size / 2)
+      MenuManager.img_button.scale = 1
+
+    method update ():
+      if (not locked)
+        if (highlight)
+          target_scale = HIGHLIGHT
+        else
+          target_scale = NORMAL
+        endIf
+      endIf
+
+      if (cur_scale != target_scale)
+        local var d = 0.015
+        if (cur_scale > target_scale)
+          cur_scale -= d
+          if (cur_scale < target_scale)
+            cur_scale = target_scale
+          endIf
+        else
+          cur_scale += d
+          if (cur_scale > target_scale)
+            cur_scale = target_scale
+          endIf
+        endIf
+      endIf
+
+    method on_in:
+      highlight = true
+      locked = false
+    method on_out:
+      highlight = false
+      locked = false
+    method on_down:
+      highlight = true
+      locked = false
+    method on_up:
+      highlight = false
+      target_scale = NORMAL
+      locked = true
+endClass
+
+class MenuEntry (item)
+  PROPERTIES
+    item : MenuItem
+    position : Vector2
+  METHODS
+endClass
+
+singleton deferred class MenuManager
+  PROPERTIES
+    img_button("button_blank.png") : Image
+    font("font_Book Antiqua_37_bold.png") : Font
+    select("sounds/sfx_tick.wav", 1) : SoundEffect
+    highlight("sounds/sfx_tock.wav", 3) : SoundEffect
+
+  METHODS
+    method init:
+      font.handle = Handle(Vector2(0, -3), Handle.center)
+      font.adjust_character_widths(-6)
+endClass
+
+class Menu
+  PROPERTIES
+    entries() : MenuEntry[]
+
+    ###stagger : Logical
+    horizontal : Logical
+    box : Box
+    justify = 1 : Int32 # 0->Left 1->Center 2->Right
+
+    target : MenuHost
+
+    current_offset = Vector2.zero : Vector2
+    target_offset = Vector2.zero : Vector2
+
+    _dirty = true : Logical
+    _current : MenuEntry
+
+  METHODS
+    method fly_out_left:
+      target_offset = Display.size * Vector2(-1, 0)
+
+    method fly_out_bottom:
+      target_offset = Display.size * Vector2(0, 1)
+
+    method fly_in_right:
+      target_offset = current_offset
+      current_offset = Display.size * Vector2(1, 0)
+
+    method fly_in_bottom:
+      target_offset = current_offset
+      current_offset = Display.size * Vector2(0, 1)
+
+    method init ():
+      box = Box(Vector2(0,0),Display.size).cropped(100)
+
+    method init (box):
+
+    method justify_left:
+      justify = 0
+      _dirty = true
+    method justify_right:
+      justify = 2
+      _dirty = true
+    method justify_centered:
+      justify = 1
+      _dirty = true
+
+    method add (MenuItem item):
+      _dirty = true
+      entries.add(MenuEntry(item))
+
+    method _getmaj (Vector2 v).Real64:
+      if (horizontal) return v.x
+      return v.y
+    method _getmin (Vector2 v).Real64:
+      if (horizontal) return v.y
+      return v.x
+    method _vec (Real64 minor, Real64 major).Vector2:
+      if (horizontal) return Vector2(major, minor)
+      return Vector2(minor, major)
+
+    method refresh:
+      if (not _dirty) return
+      _dirty = false
+
+      local Real64 total_major = 0
+      forEach (entry in entries)
+        total_major += _getmaj(entry.item.size)
+      endForEach
+      local Real64 leftover_major = _getmaj(box.size) - total_major
+      local var padding_major = leftover_major / max(1, entries.count - 1)
+
+      total_major = 0
+      local Int32 i = 0
+      forEach (entry in entries)
+        local Real64 minor = _getmin(box.position)
+        which (justify)
+          case 0:
+            # Nothing
+          case 1:
+            minor = _getmin(box.center) - _getmin(entry.item.size) / 2
+          case 2:
+            # Right
+            minor = _getmin(box.position) - _getmin(entry.item.size)
+        endWhich
+        entry.position = _vec(minor, _getmaj(box.position) + total_major + i * padding_major)
+        total_major += _getmaj(entry.item.size)
+        i++
+      endForEach
+
+    method update:
+      current_offset = current_offset * .8 + target_offset * .2
+      #if (current_offset.x < 5) current_offset = Vector2(0, current_offset.y)
+      #if (current_offset.y < 5) current_offset = Vector2(current_offset.x, 0)
+
+      refresh
+      forEach (entry in entries)
+        entry.item.update
+      endForEach
+
+    method update_current (Logical check_button_state = true):
+      local MenuEntry entry = find_under(check_button_state)
+      if (entry == null)
+        if (_current?)
+          _current.item.on_out
+          _current = null
+        endIf
+        return
+      endIf
+      if (_current != entry)
+        if (_current?) _current.item.on_out
+        _current = entry
+        _current.item.on_in
+        #MenuManager.highlight.play
+      endIf
+
+    method on ( MouseEvent e ):
+      which (e.type)
+        case MouseEvent.button_press:
+          update_current
+          if (_current?)
+            _current.item.on_down
+          endIf
+        case MouseEvent.button_release:
+          update_current(false)
+          if (_current?)
+            _current.item.on_up
+            if (target?) target.menu_selected(_current, _current.item.identifier)
+            MenuManager.select.play
+            _current = null
+          endIf
+        case MouseEvent.movement:
+          update_current
+      endWhich
+
+    method find_under (Logical check_button_state = true).MenuEntry:
+      if (check_button_state)
+        local var good = false
+        forEach (i in 0..Input.mouse_button_state.count-1)
+          if (Input.mouse_button_state[i]) good = true
+        endForEach
+        if (not good) return null
+      endIf
+
+      forEach (entry in entries)
+        local var p = entry.position + current_offset
+        if ((entry.item.hitbox + p).contains(Input.mouse_position))
+          return entry
+        endIf
+      endForEach
+      return null
+
+      #method current_offset.Vector2:
+      #  return Vector2.zero
+
+    method draw:
+      refresh
+      update_current
+      forEach (entry in entries)
+        local var p = entry.position + current_offset
+        entry.item.draw(p)
+      endForEach
+      #{
+      local var current = _current
+      local var hit = false
+      forEach (entry in entries)
+        local var p = entry.position
+        if ((entry.item.hitbox + p).contains(Input.mouse_position))
+          hit = true
+          if (entry != current)
+            if (current?)
+              current.item.on_out
+            endIf
+            current = entry
+            current.item.on_in
+          endIf
+        endIf
+        entry.item.draw(p)
+      endForEach
+      if (hit)
+        _current = current
+      else
+        if (_current?)
+          _current.item.on_out
+        endIf
+        _current = null
+      endIf
+      }#
+endClass
+
+deferred singleton class TreeGame : Screen, MyScreen
+  PROPERTIES
+    flake_button("flake_button.png") : Image
+    spark("twinkle.png") : Image
+    tree : Tree
+    ticks : Int32
+    bg("bg3.jpg") : Image
+    treepic("new_tree_base.png") : Image
+    starpic("new_tree_star_glow_white_380.png") : Image
+    tree_sparkle_map("tree_sparkle_map.png") : Bitmap
+    star_sparkle_map("star_sparkle_map.png") : Bitmap
+    sparks() : MultiDrawable
+    tree_sparkles() : MultiDrawable
+    star_sparkles() : MultiDrawable
+
+    timer_font("font_Book Antiqua_37_bold.png") : Font
+
+    last_button : Int32
+    last_position : Vector2
+
+    last_slow_timer : Int64
+
+  METHODS
+    method random_on_map (Bitmap map).Vector2:
+      while (true)
+        local var p = Vector2(random_Int32(0, map.size.x), random_Int32(0, map.size.y))
+        local Int32 pixel = map.get(p.x, p.y).argb
+        if ((pixel & 0xFFffFF) == 0)
+          return p
+        endIf
+      endWhile
+
+    method random_star_sparkle:
+      local var p = random_on_map(star_sparkle_map)
+      TreeGame.spark.color = Color(HSV(.1666, random_Real64(0,1), 1))
+
+      local var s = SimpleSpriteAnimation(TreeGame.spark, 900)
+
+      local var d = random_Real64(40, 90)
+      if (random_Real64 < .5) d *= -1
+      s.setup_rotation_degrees(Degrees(0), Degrees(d))
+      s.setup_scale(0, 1.5, SimpleSpriteAnimation.OSCILLATE_SIN_SHARP)
+      s.setup_fade(0, 1, SimpleSpriteAnimation.OSCILLATE_SIN)
+
+      p = bg.size / tree_sparkle_map.size * p
+      s.setup_position(p)
+
+      star_sparkles.add(s)
+
+    method random_sparkle:
+      if (random_Real64 < .5)
+        random_star_sparkle
+      else
+        random_tree_sparkle
+      endIf
+
+
+    method random_tree_sparkle:
+      local var p = random_on_map(tree_sparkle_map)
+      TreeGame.spark.color = Color(HSV(random_Real64, random_Real64(.5,.8), random_Real64(.8,1)))
+      local var s = OverexposedSimpleSpriteAnimation(TreeGame.spark, 900)
+
+      local var d = random_Real64(40, 90)
+      if (random_Real64 < .5) d *= -1
+      s.setup_rotation_degrees(Degrees(0), Degrees(d))
+      s.setup_scale(0, 1.5, SimpleSpriteAnimation.OSCILLATE_SIN_SHARP)
+      s.setup_fade(0, 1, SimpleSpriteAnimation.OSCILLATE_SIN)
+
+      p = bg.size / tree_sparkle_map.size * p
+      s.setup_position(p)
+
+      tree_sparkles.add(s)
+
+    method init:
+      spark.handle = Handle.center
+      spark.blend = Blend.overexpose
+
+      timer_font.handle = Handle.top_right
+      timer_font.adjust_character_widths(-6)
+      timer_font.make_numerals_monospace
+
+      SFX # cache SFX
+      FlakeManager
+      Display.background_color = Color(0,0,0)
+      Music.tick
+      #Display.background_color = Color(255,255,255)
+
+    method on_activate:
+      tree = Tree(17)
+      tree.resume
+      last_slow_timer = running_ms
+
+    method on_resume:
+      tree.resume
+      last_slow_timer = running_ms
+
+    method check_dead.Logical:
+      #println(running_ms - last_slow_timer)
+      local var dead = false
+      if (running_ms - last_slow_timer > 5000)
+        time_offset -= (running_ms - last_slow_timer)
+        if (not tree.solved)
+          tree.pause(last_slow_timer + 2000)
+          push(PauseMenu, Screen.fade_between)#, Screen.fade_in)
+          dead = true
+        endIf
+      endIf
+      last_slow_timer = running_ms
+      return dead
+
+    method update:
+      # Update your game state here.
+      # You can check Input.key_state[Key.keycode_a] and
+      # Input.mouse_button_state[1+] to check for keys and buttons being held
+      # down over time.
+      tree.update()
+      ticks++
+      if ((ticks % 60) == 0)
+        ticks = 0
+        slow_timer
+      endIf
+
+    method slow_timer:
+      # Called every second or two
+      Music.tick
+
+
+    method draw:
+      if (check_dead)
+        prior.draw
+        return
+      endIf
+      #SystemFont.draw( ""+Input.mouse_position, Display.center )
+      bg.draw
+      FlakeManager.draw
+      treepic.draw
+      tree.draw
+      tree.make_sparks
+if (tree.solved)
+  if (random_Real64 < .1) random_tree_sparkle
+else
+  if (random_Real64 < .001) random_tree_sparkle
+endIf
+      tree_sparkles.draw
+      sparks.draw
+
+      SystemFont.handle = Handle.center
+      if (tree.solved)
+if (random_Real64 < .04) random_star_sparkle
+        local Real64 p = (running_ms - tree.solved_ms) / 400.0
+        if (p > 1) p = 1
+        starpic.color = Color(255,255,255,255*p)
+        starpic.draw(Vector2(380,0))
+        star_sparkles.draw
+      endIf
+      timer_font.handle = Handle.top_right
+      local var pos = Display.size * Vector2(1, 0) + Vector2(-6, 1)
+      timer_font.color = Color.black
+      timer_font.draw(tree.time_string, pos + Vector2(2,2))
+      timer_font.color = Color.white
+      timer_font.draw(tree.time_string, pos)
+
+      local var button = flake_button
+      button.scale = 1
+      button.angle = Radians(0)
+      button.color = Color(0,0,0,192)
+      #button.draw(Vector2(42, 42))
+      button.draw(Vector2(7, 5))
+      button.color = Color.white
+      button.draw(Vector2(5, 3))
+      #button.draw(Vector2(40, 40))
+
+
+    method on( MouseEvent e ):
+      which (e.type)
+        case MouseEvent.button_press:
+          if (e.position.x < 85 and e.position.y < 85)
+            MenuManager.select.play
+            tree.pause
+            push(PauseMenu, Screen.fade_between)
+          endIf
+          last_button = e.button
+          last_position = e.position
+
+        case MouseEvent.button_release:
+
+          if (e.button == last_button)
+            local var x = e.position.x - last_position.x
+            local var y = e.position.y  - last_position.y
+
+            #println(x + " " + y)
+
+
+            if (abs(x) < 15) x = 0
+            #else x = sign(x)
+            if (abs(y) < 15) y = 0
+            #else y = sign(y)
+
+            #if (y == 0) y = x
+            #if (x == 0) x = y
+
+            if (abs(x) * .66 > abs(y)) y = x
+            elseIf (abs(y) * .66 > abs(x)) x = y
+
+            if (x == y and y == 0)
+              if (e.button == 2)
+                x = -1
+                y = -1
+              endIf
+            endIf
+
+            x = sign(x)
+            y = sign(y)
+
+            if (x == -1 and y == 1) y = -1
+
+            if (x == y)
+              if (e.button != 1) x *= -1
+              if (Input.shift_pressed and x == 0) x = -1
+              local var pos = last_position * .8 + e.position * .2
+              tree.click(pos, x < 0)
+            endIf
+          endIf
+        case MouseEvent.movement:
+      endWhich
+
+    method on( KeyEvent e ):
+      which (e.type)
+        case KeyEvent.press:
+          if (e.keycode == Key.keycode_escape) System.exit
+          if (e.unicode == 'x') tree.click(Input.mouse_position, false)
+          if (e.unicode == 'z') tree.click(Input.mouse_position, true)
+
+        case KeyEvent.repeat:
+        case KeyEvent.release:
+      endWhich
 endClass
 
 
-class InitialState : State<<MainScreen>>
+class Pair<<$AType, $BType>>
+  PROPERTIES
+    a : $AType
+    b : $BType
+
   METHODS
-    method on_start
-      # Called when this state becomes the active state
-      println "Hello World"
+    method init:
+      # Nothing
 
-    method after_draw
-      # This happens after the current screen's on_draw()
+    method init ($AType _a, $BType _b)
+      a = _a
+      b = _b
 
-    method on( e:KeyEvent )
-      trace e
+    method hash_code.Int32:
+      return a.hash_code | b.hash_code
 
-    method on( e:PointerEvent )
-      if (e.is_press or e.is_release) trace e
+    method to_String.String:
+      return "<Pair: $, $>" (a, b)
+endClass
 
-    method on( e:TextEvent )
-      trace e
+class LitSets
+  PROPERTIES
+    #    lit() : HashSet<<Tile>>
+    #    unlit() : HashSet<<Tile>>
+    lit() : Tile[]
+    unlit() : Tile[]
+  METHODS
+    method init:
+endClass
 
-    method on_draw
-      # This happens before the current screen's on_draw()
-      Display.clear( Color.BLUE )
+augment Global
+  PROPERTIES
+    time_offset : Int64
+  METHODS
+    method sinr (Real64 r).Real64:
+      return sin(Radians(r))
+    method running_ms.Int64:
+      return time_ms + time_offset
+endAugment
 
-    method on_resize
-      trace
-      # Called when the Display.size changes
+singleton deferred class FlakeManager
+  PROPERTIES
+    num_flakes = 25 : Int32
+    add_delay_min = 500 : Int32
+    add_delay_max = 2500 : Int32
 
-    method on_update
-      # Called 60 times a second
+    flakes() : Flake[]
+    images() : Image[]
+
+    next_add : Int64
+  METHODS
+    method init:
+      forEach (i in 1..6)
+        images.add(Image("flakes/flake$.png" (i)))
+        images.last.handle = Handle.center
+      endForEach
+
+      flakes.add(Flake())
+      next_add = running_ms + random_Int32(add_delay_min, add_delay_max)
+
+    method draw:
+      forEach (i in 0..flakes.count-1)
+        local var flake = flakes[i]
+        local var p = flake.pos
+        local var t = flake.t
+
+        p += (flake.vel * t)
+
+        p += Vector2(sin(Radians(2 * pi * t / flake.sway_period + 2 * pi * flake.sway_offset)) * flake.sway_amount, 0)
+        p += Vector2(sin(Radians(2 * pi * t / flake.sway_period2 + 2 * pi * flake.sway_offset2)) * flake.sway_amount2, 0)
+
+        flake.image.scale = flake.size
+        flake.image.color = flake.color
+        flake.image.angle = flake.rotation * t
+        if (p.y - flake.image.size.y > Display.size.y)
+          flakes[i] = Flake()
+        else
+          flake.image.draw(p)
+        endIf
+      endForEach
+
+      if (flakes.count < num_flakes)
+        if (next_add <= running_ms)
+          next_add = running_ms + random_Int32(add_delay_min, add_delay_max)
+          flakes.add(Flake())
+        endIf
+      endIf
+endClass
+
+class Flake
+  PROPERTIES
+    rotation : Degrees
+    pos(random_Int32(-400, Display.size.x), -150) : Vector2
+    size = random_Real64(.5, 1) : Real64
+    image = FlakeManager.images.random() : Image
+    vel(random_Real64(5, 15), random_Real64(10, 25)) : Vector2
+    color(255,255,255,random_Real64(.7,1) * 255) : Color
+    start_ms = running_ms : Int64
+
+    sway_amount = random_Real64(5, 15) : Real64
+    sway_period = random_Real64(4, 6) : Real64
+    sway_offset = random_Real64(0, .25) : Real64
+
+    sway_amount2 = random_Real64(5, 10) : Real64
+    sway_period2 = random_Real64(6, 12) : Real64
+    sway_offset2 = random_Real64(0, .5) : Real64
+  METHODS
+    method t.Real64:
+      return (running_ms - start_ms) / 1000.0
+    method init:
+      while (abs(rotation.value) < 8)
+        rotation = Degrees(random_Real64(-10, 25))
+      endWhile
+
+endClass
+
+class Tree
+  PROPERTIES
+    solved = false : Logical
+    draw_pos(70-23,110+80) : Vector2
+    width : Int32 # max width
+    source : Tile
+    num_pieces : Int32 # number of lightable pieces
+    started_ms = running_ms : Int64
+    solved_ms : Int64
+
+    pause_start = -1 : Int64
+
+    t : ArrayList<<ArrayList<<Tile>>>>
+
+  METHODS
+    method pause (Int64 time = running_ms):
+      if (solved) return
+      if (pause_start != -1) return
+
+      pause_start = time
+
+    method resume:
+      if (pause_start == -1) return
+
+      started_ms += (running_ms - pause_start)
+
+      pause_start = -1
+    method solved (Logical v):
+      &solved = v
+      if (v)
+        solved_ms = running_ms
+        SFX.jingle.play
+      endIf
+
+    method pad (Int64 n).String:
+      if (n < 10) return "0" + n
+      return "" + n
+
+    method time_string.String:
+      local var sec = 0
+      if (solved)
+        sec = ((solved_ms - started_ms) / 1000)
+      else
+        sec = ((running_ms - started_ms) / 1000)
+      endIf
+      return pad(sec / 60) + ":" + pad(sec % 60)
+
+    method get (Int32 x, Int32 y).Tile:
+      if (y < 0) return null
+      if (y >= t.count) return null
+      local var d = (t.last.count - t[y].count) / 2
+      x = x - d
+      if (x < 0) return null
+      if (x >= t[y].count) return null
+      return t[y][x]
+
+    method height.Int32:
+      return t.count
+
+    method size.Int32:
+      return (width - 1) / 2
+
+    method make_row (Int32 w).ArrayList<<Tile>>:
+      local Int32 o = (width - w) / 2
+      local ArrayList<<Tile>> r = ArrayList<<Tile>>()
+      forEach (i in 0..w-1)
+        r.add(Tile(this, o + i))
+      endForEach
+      return r
+
+    method init (Int32 base_width):
+      width = base_width
+
+      t = ArrayList<<ArrayList<<Tile>>>>()
+      t.add(make_row(width))
+      t[0][size].lit = true
+      t[0][size].ready = true
+      t[0][size].value = 1
+      source = t[0][size]
+      source.cur_lit = 1
+      source.target_lit = 1
+
+      t.insert(make_row(width), 0)
+      local Int32 s = width
+      while (s >= 3)
+        t.insert(make_row(s), 0)
+        s = s - 2
+      endWhile
+
+      num_pieces = 1 # 1 for the root piece
+      local Int32 y = 0
+      forEach (r in t)
+        if (r != t.last) num_pieces += r.count
+        forEach (c in r)
+          c.y = y
+        endForEach
+        y = y + 1
+      endForEach
+
+      reset
+      randomize
+
+      relight
+
+    method reset:
+      local ArrayList<<Tile>> tiles()
+      forEach (r in t)
+        if (r == t.last) escapeForEach
+        forEach (c in r)
+          tiles.add(c)
+        endForEach
+      endForEach
+
+      while (tiles.count > 0)
+        local var c = tiles.random()
+        if (c.try_connect)
+          tiles.remove_value(c)
+        endIf
+      endWhile
+
+    method click (Vector2 pos, Logical alternate):
+      if (solved) return
+      pos = pos - draw_pos
+      local Int32 x = pos.x + TileImages.imgs[0].size.x / 2
+      local Int32 y = pos.y + TileImages.imgs[0].size.y / 2
+      x /= TileImages.imgs[0].size.x
+      y /= TileImages.imgs[0].size.y
+      local var tile = get(x, y)
+      if (tile == null) return
+      if (tile.y == height - 1) return
+
+      tile.rotate(alternate)
+
+    method randomize:
+      local var rots = ArrayList<<Int32>>(0..3)
+      forEach (r in t)
+        forEach (c in r)
+          if (c != source)
+            if (Input.shift_pressed == false)
+              c.value = c.ror(c.value, rots.random())
+            endIf
+          endIf
+        endForEach
+      endForEach
+      if (Input.shift_pressed)
+        local var c = t[0][0]
+        c.value = c.ror(c.value, 1) #rots.random())
+      endIf
+
+    method lit_and_unlit_sets (Logical unlight = false).LitSets:
+      local var o = LitSets()
+
+      forEach (r in t)
+        if (not (r is t.last))
+          forEach (c in r)
+            if (c != source)
+              if (c.lit)
+                o.lit.add(c)
+                if (unlight)
+                  c.lit = false
+                  c.spark_dirs = 0
+                endIf
+              else
+                o.unlit.add(c)
+              endIf
+            endIf
+          endForEach
+        endIf
+      endForEach
+
+      return o
+
+    method relight ():
+      #method relight (Int64 finish_time):
+      local var prev = lit_and_unlit_sets(true)
+      source.spark_dirs = 0
+
+      solved = false
+      source.spread
+
+      local var cur = lit_and_unlit_sets
+      #cur.lit.intersect(prev.unlit)
+      #cur.unlit.intersect(prev.lit)
+      # lit and unlit are now just the changed ones
+      forEach (c in prev.lit)
+        if (cur.lit.contains(c)) cur.lit.remove(c)
+      endForEach
+      forEach (c in prev.unlit)
+        if (cur.unlit.contains(c)) cur.unlit.remove(c)
+      endForEach
+
+      forEach (c in cur.lit)
+        c.target_lit = 1
+        which (c.index)
+          case 1,2,4,8:
+#XXXXXXXX
+        endWhich
+      endForEach
+      forEach (c in cur.unlit)
+        c.target_lit = 0
+      endForEach
+
+    method update:
+      forEach (r in t)
+        forEach (c in r)
+          c.update
+        endForEach
+      endForEach
+
+    method draw:
+      forEach (r in t)
+        forEach (c in r)
+          c.draw
+        endForEach
+      endForEach
+
+    method make_sparks:
+      forEach (r in t)
+        forEach (c in r)
+          c.make_sparks
+        endForEach
+      endForEach
+endClass
+
+class Tile
+  PROPERTIES
+    tree : Tree
+    x : Int32
+    y : Int32
+    lit : Logical
+    ready: Logical
+    value :  Int32
+    rotation : Real64
+    index = -1: Int32
+
+    target_lit = 0 : Real64
+    cur_lit : Real64
+    lit_start : Int64
+    lit_duration : Int32
+
+    cur_rot : Real64
+    rot_amount : Real64
+
+    hue = random_Real64 : Real64
+    sat1 = random_Real64(.9,1) : Real64
+    sat2 = random_Real64(.9,1) : Real64
+    hue_var = random_Real64(0,.1) : Real64
+
+    spark_dirs : Int32
+  METHODS
+    method hash_code.Int32:
+      return x.right_shifted(16) | y
+
+    method lit (Logical v):
+      if (v != &lit)
+        if (target_lit != cur_lit)
+          #double p = cur_lit
+          #if (not lit) p = 1 - p
+
+        endIf
+      endIf
+      &lit = v
+
+    method rotation.Degrees:
+      if (!rotating) return Degrees(&rotation)
+
+      return Degrees(cur_rot)
+
+    method rotating.Logical:
+      return cur_rot != &rotation
+
+    method rotate (Logical left):
+      #SFX.swish1.play
+      if (left)
+        &value = rol(value, 1)
+      else
+        &value = ror(value, 1)
+      endIf
+
+
+      local var ora = rot_amount
+
+      rot_amount = 10
+      if (left)
+        &rotation -= 90
+        rot_amount *= -1
+      else
+        &rotation += 90
+      endIf
+
+      if (sign(rot_amount) == sign(ora))
+        rot_amount += ora * .5
+      endIf
+
+      tree.relight
+      local var good = false
+      if (lit?)
+        good = true
+        forEach (i in 0..3)
+          local var b = 1.left_shifted(i)
+          if ((b & value) > 0)
+            local var n = neighbor(b)
+            if (n == null or ((n.value & opp(b)) == 0))
+              good = false
+              escapeForEach
+            endIf
+          endIf
+        endForEach
+      endIf
+      if (good)
+        SFX.tambourine.play
+      else
+        SFX.swish1.play
+      endIf
+
+    method rol (Int32 b, Int32 n=1).Int32:
+      if (n == 0) return b & 15
+      return rol((b & 1).left_shifted(3) | b.right_shifted(1), n - 1)
+
+    method ror (Int32 b, Int32 n=1).Int32:
+      if (n == 0) return b & 15
+      return ror((b & 8).right_shifted(3) | b.left_shifted(1), n - 1)
+
+    method neighbor (Int32 v).Tile:
+      which (v)
+        case 1: return tree.get(x, y-1)
+        case 2: return tree.get(x+1, y)
+        case 4: return tree.get(x, y+1)
+        case 8: return tree.get(x-1, y)
+      endWhich
+      return null
+
+    method try_connect.Logical:
+      if (ready) return false
+      local var dirs = {1,2,4,8}
+      dirs.shuffle()
+      forEach (d in dirs)
+        local var n = neighbor(d)
+        if (n != null)
+          if (n.ready)
+            value = value | d
+            ready = true
+            n.value = n.value | opp(d)
+            return true
+          endIf
+        endIf
+      endForEach
+
+      return false
+
+    method init (Tree parent, Int32 x_):
+      tree = parent
+      x = x_
+      lit = false
+      ready = false
+      value = 0
+
+    method update:
+      cur_lit = cur_lit * .95 + target_lit * .05
+
+      if (abs(rot_amount) > 5)
+        rot_amount *= .925
+      endIf
+
+      if (&rotation != cur_rot)
+        cur_rot = cur_rot + rot_amount
+        if (rot_amount > 0)
+          if (cur_rot >= &rotation)
+            if (&rotation > 360) &rotation -= 360
+            cur_rot = &rotation
+            rot_amount = 0
+            tree.relight
+          endIf
+        elseIf (rot_amount < 0)
+          if (cur_rot <= &rotation)
+            if (&rotation < 0) &rotation += 360
+            cur_rot = &rotation
+            rot_amount = 0
+            tree.relight
+          endIf
+        endIf
+      endIf
+
+
+    method draw ():
+      if (index == -1) return
+      local Image img = TileImages.imgs[index]
+      local Logical finish = rotating
+      img.angle = rotation
+      finish = finish and !rotating
+      local Int32 sx = img.size.x
+      local Int32 sy = img.size.y
+      local Int32 alpha = 255
+      if (tree.solved)
+        local Real64 p = (running_ms - tree.solved_ms) / 1000.0
+        if (p > .75) p = .75
+        p = 1 - p
+        alpha = p * 255
+      endIf
+
+        #if (lit)
+        img.color = Color(255 * cur_lit,255 * cur_lit,64 * cur_lit, alpha)
+        #else
+        #img.color = Color(0,0,0)
+        #endIf
+      img.draw(x * sx + tree.draw_pos.x, y * sy + tree.draw_pos.y)
+      if  (index == 0 and this != tree.source)
+        TileImages.bulb.color = Color(HSV(hue, sat1, .25 + .75 * cur_lit))
+        TileImages.bulb.blend = Blend.normal
+        TileImages.bulb.draw(x * sx + tree.draw_pos.x, y * sy + tree.draw_pos.y)
+        TileImages.bulb.color = Color(HSV(hue+hue_var, sat2, .5 * cur_lit))
+        TileImages.bulb.blend = Blend.overexpose
+        TileImages.bulb.draw(x * sx + tree.draw_pos.x, y * sy + tree.draw_pos.y)
+      endIf
+
+      if (finish) #FIXME: only once per frame!
+        tree.relight
+      endIf
+
+    method make_sparks ():
+      if (spark_dirs == 0) return
+      if (rotating) return
+
+      local Int32 b = 1
+      local var s = spark_dirs
+      while (s > 0)
+        if ((s & 1) == 1)
+          spark(b)
+        endIf
+        b = b.left_shifted(1)
+        s = s.right_shifted(1)
+      endWhile
+
+    method spark (Int32 d):
+      if (random_Real64 < 0.96) return
+
+      local Vector2 p = Vector2(0, 0)
+      local Vector2 o = Vector2(0, 0)
+      which (d)
+        case 1:
+          p = Vector2(0, -1)
+          o = Vector2(1, 0)
+        case 2:
+          p = Vector2(1, 0)
+          o = Vector2(0, 1)
+        case 4:
+          p = Vector2(0, 1)
+          o = Vector2(1, 0)
+        case 8:
+          p = Vector2(-1, 0)
+          o = Vector2(0, 1)
+      endWhich
+      local var v = p
+      p *= (TileImages.imgs[0].size * .5)
+      local var shift = random_Real64(-6,6)
+      p += o * shift
+
+      local Real64 dir = -1
+      if (shift > 0) dir = -dir
+      if (d == 4 or d == 8) dir = -dir
+
+      p += Vector2(x, y) * TileImages.imgs[0].size + tree.draw_pos
+
+      TreeGame.spark.color = Color(255, 255, 0)
+      local var s = SimpleSpriteAnimation(TreeGame.spark, 150)
+
+      v = v.rotated(Degrees(random_Real64(0,45)*dir)) * TileImages.imgs[0].size * 0.25
+      s.setup_position_relative(p, v)
+      s.setup_rotation_degrees(Degrees(0), Degrees(random_Real64(-10,10)))
+      s.setup_scale(1, 0.6)
+      s.setup_fade(cur_lit, 0)
+
+      TreeGame.sparks.add(s)
+
+    method opp (Int32 v).Int32:
+      return ror(v, 2)
+
+    method spread ().Int32:
+
+      if (lit? == false) return 0
+      if (rotating) return 0
+
+      local Int32 children = 0
+      children++ # Myself
+
+      forEach (i in 0..3)
+        local var b = 1.left_shifted(i)
+        if ((b & value) > 0)
+          local var n = neighbor(b)
+          if (n != null)
+            if ((n.value & opp(b)) > 0)
+              if (n.lit? == false)
+                n.lit = true
+                children += n.spread
+              endIf
+            else
+              children = 0 # can't be solved!
+              spark_dirs |= b
+              spark(b)
+            endIf
+          else
+            children = 0 # can't be solved!
+            spark_dirs |= b
+            spark(b)
+          endIf
+        endIf
+      endForEach
+
+      if (children >= tree.num_pieces)
+        tree.solved = true
+      endIf
+
+      return children
+
+    method value ( Int32 v ):
+      &value = v
+      #if (ready) spread
+
+      local Int32 rot = 0
+      which (v)
+        case 1,2,4,8:
+          index = 0
+          if (v > 1) rot = rot + 1
+          if (v > 2) rot = rot + 1
+          if (v > 4) rot = rot + 1
+        case 3, 6, 9, 12:
+          index = 1
+          if (v == 6) rot = 1
+          if (v == 12) rot = 2
+          if (v == 9) rot = 3
+        case 5, 10:
+          index = 2
+          if (v > 5) rot = rot + 1
+        case 7, 11, 13, 14:
+          index = 3
+          if (v == 11) rot = 3
+          if (v == 13) rot = 2
+          if (v == 14) rot = 1
+        case 15:
+          index = 4
+        others:
+          index = -1
+      endWhich
+      rotation = (rot * 90)
+      cur_rot = &rotation
+
+endClass
+
+singleton class TileImages
+  PROPERTIES
+    imgs() : Image[]
+    bulb : Image
+  METHODS
+    method add_img (String name):
+      local Image img = Image(name)
+      imgs.add(img)
+      img.handle = Handle.center
+
+    method init:
+      bulb = Image("bulb.png")
+      bulb.handle = Handle.center
+      add_img("1.png")
+      add_img("3.png")
+      add_img("5.png")
+      add_img("7.png")
+      add_img("15.png")
+
+endClass
+
+singleton deferred class Music
+  PROPERTIES
+    #path = "./sounds/music" : String
+    volume : Real64
+    paused = false: Logical
+
+    tracks() : Sound[]
+    names() : String[]
+    index = -1 : Int32
+    real_volume : Real64
+    is_paused = true: Logical
+
+  METHODS
+    method init:
+      #local File dir = File(".")
+      #dir = File(dir.absolute_filepath, "sounds")
+      #dir = File(dir.absolute_filepath, "music")
+      local var files = {
+        "dance-of-the-sugar-plum-faries.mp3",
+        "jingle-bells-slow-mix.mp3",
+        "oh-christmas-tree.mp3",
+        "silent-night.mp3"}
+
+      forEach (entry in files) #dir.directory_listing)
+        #tracks.add(Sound("sounds/music/" + entry))
+        tracks.add(Sound(entry))
+        local var words = entry.replace("-", " ").before_last('.').split(' ')
+        local StringBuilder n()
+        forEach (word in words)
+          n.print(word.capitalized)
+          n.print(" ")
+        endForEach
+        names.add(n.to_String.trim)
+      endForEach
+
+      local var order = ArrayList<<Int32>>(0..(tracks.count - 1))
+      order.shuffle
+      forEach (o in order)
+        names.add(names[o])
+        tracks.add(tracks[o])
+      endForEach
+      forEach (o in order)
+        names.remove(0)
+        tracks.remove(0)
+      endForEach
+
+    method toggle_pause:
+      paused = not paused
+
+    method next_track:
+      if (tracks.count == 0)
+        index = -1
+        return
+      endIf
+
+      if (index >= 0)
+        tracks[index].stop
+      endIf
+
+      index++
+      if (index >= tracks.count) index = 0
+      tracks[index].play
+      #println("Playing: " + names[index])
+
+      paused = false
+      is_paused = false
+
+    method tick.Logical:
+      if (paused != is_paused)
+        is_paused = paused
+        if (paused)
+          if (index >= 0)
+            tracks[index].pause
+          endIf
+        else
+          if (index >= 0)
+            tracks[index].play
+          else
+            next_track
+          endIf
+        endIf
+        return true
+      endIf
+
+      if (paused) return true
+
+      if (index < 0)
+        next_track
+      else
+        if (not tracks[index].is_playing)
+          tracks[index].stop
+          next_track
+        endIf
+      endIf
+
+      return true
+
+endClass
+
+singleton deferred class SFX
+  PROPERTIES
+    enabled = true : Logical
+    swish1("sounds/sfx_swish1.wav", 5) : SoundEffect
+    tambourine("sounds/sfx_tambourine.wav", 5) : SoundEffect
+    swish2("sounds/sfx_swish2.wav", 5) : SoundEffect
+    click1("sounds/sfx_click1.wav", 5) : SoundEffect
+    jingle("sounds/sfx_jingle.wav", 1) : SoundEffect
+  METHODS
+
+
+endClass
+
+class SoundEffect : Sound
+  METHODS
+    method play:
+      if(SFX.enabled) prior.play(true)
+endClass
+
+
+
+
+underlying aspect Drawable
+  METHODS
+    method draw.Logical: abstract
+endAspect
+
+underlying aspect Updatable
+  METHODS
+    method update.Logical: abstract
+endAspect
+
+class MultiDrawable : Drawable
+  PROPERTIES
+    children : Drawable[]
+    die_when_empty : Logical
+
+    _removed() : Drawable[]
+    _drawing = false : Logical
+  METHODS
+    method init (die_when_empty = false):
+      children = ArrayList<<Drawable>>()
+
+    method remove (Drawable d):
+      if (_drawing)
+        _removed.add(d)
+      else
+        try
+          children.remove_value(d)
+        catch (Exception e)
+        endTry
+      endIf
+
+    method add (Drawable d):
+      children.add(d)
+
+    method draw.Logical:
+      local Int32[] removed = null
+      _drawing = true
+      local Logical r = false
+      forEach (i in 0..children.count-1)
+        local var d = children[i]
+        try
+          r = d.draw
+        catch (Exception e)
+          println(e.to_String)
+          r = false
+        endTry
+        if (r == false)
+          if (removed == null)
+            removed = ArrayList<<Int32>>()
+          endIf
+          removed.add(i)
+        endIf
+      endForEach
+      _drawing = false
+      if (removed != null)
+        forEach (i in removed.count-1..0 step -1)
+          children.remove(removed[i])
+        endForEach
+      endIf
+      if (_removed.count > 0)
+        forEach (i in _removed)
+          children.remove_value(i)
+        endForEach
+        _removed.clear
+      endIf
+
+      if (die_when_empty and (children.count == 0))
+        return false
+      endIf
+      return true
+endClass
+
+class OverexposedSimpleSpriteAnimation : SimpleSpriteAnimation
+  METHODS
+    method draw.Logical:
+      image.blend = Blend.normal
+      prior.draw
+      image.blend = Blend.overexpose
+      return prior.draw
+
+endClass
+
+class SimpleSpriteAnimation : Drawable, Updatable
+  CLASS_PROPERTIES
+
+    OPACITY = 0 : Int32
+    ANGLE = 1 : Int32
+    SCALE = 2 : Int32
+    XCOORD = 3 : Int32
+    YCOORD = 4 : Int32
+    NONE = 0 : Int32
+    LINEAR = 1 : Int32
+    SIN = 2 : Int32
+    SIN_SHARP = 3 : Int32
+    OSCILLATE_LINEAR = 4 : Int32
+    OSCILLATE_SIN = 5 : Int32
+    OSCILLATE_SIN_SHARP = 6 : Int32
+
+  PROPERTIES
+
+    clock() : Stopwatch
+
+    values=ArrayOf<<Real64>>[5,2] : Array<<Array<<Real64>>>>
+
+    meth=ListOf<<Real64>>[5] : Real64[]
+
+    color : Color
+
+    # Amount of gravity per second
+    gravity_direction(0,0) : Vector2
+
+    # Amount of drift per second
+    drift_direction(0,0) : Vector2
+
+    duration_ms : Real64
+    start_time : Real64
+    cyclical(false) : Logical
+    stopped(false) : Logical
+
+    persist(false) : Logical # What to do when stopped / finished
+
+    image : Image
+
+    num_deaths = 0 : Int32
+    max_deaths = 0 : Int32
+
+    temp_angle : Radians
+
+  METHODS
+
+    #{
+  LINEAR:
+    /
+   /
+  /
+
+  SIN:
+    _
+   /
+  |
+
+  SIN_SHARP:
+
+     |
+   _/
+
+  OSCILLATE_LINEAR:
+   /\
+  /  \
+
+  OSCILLATE_SIN:
+    __
+   /  \
+  |    |
+
+  OSCILLATE_SIN_SHARP:
+
+    |
+  _/ \_
+  }#
+
+    method remove:
+      stop
+      persist = false
+
+    method init(image,duration_ms):
+      init(image,duration_ms,Vector2(0,0))
+
+    method init(image,duration_ms,Vector2 coord):
+
+      reset
+
+      values[SCALE][0] = 1
+      values[OPACITY][0] = 1
+      values[XCOORD][0] = coord.x
+      values[YCOORD][0] = coord.y
+
+      color = image.color
+
+    method stop:
+      stopped = true
+
+  # ------------------------------------------------------------------------
+
+  #{*  Sets how opacity changes over time for this sprite.
+    *  Opacities are measured by a floating point value between
+    *  0 (fully transparent) and 1 (fully opaque).
+    *  @param start_opacity The initial opacity
+    *  @param end_opacity The final opacity
+    }#
+    method setup_fade(Real64 start_opacity, Real64 end_opacity, Int32 interpolation_type):
+      values[OPACITY][0] = start_opacity
+      values[OPACITY][1] = end_opacity
+      meth[OPACITY] = interpolation_type
+
+    method setup_rotation(Radians start_radians, Radians end_radians, Int32 interpolation_type):
+      values[ANGLE][0] = start_radians.value
+      values[ANGLE][1] = end_radians.value
+      meth[ANGLE] = interpolation_type
+
+    method setup_rotation_degrees(Radians start_degrees, Radians end_degrees, Int32 interpolation_type):
+      setup_rotation(start_degrees * pi / 180, end_degrees * pi / 180, interpolation_type)
+
+    method setup_scale(Real64 start_factor, Real64 end_factor, Int32 interpolation_type):
+      values[SCALE][0] = start_factor
+      values[SCALE][1] = end_factor
+      meth[SCALE] = interpolation_type
+
+    method get_fade.Real64:
+      local Real64 p = getP
+      if(p > 1) p = 1
+      return interpolate(OPACITY, p)
+
+    method get_angle.Real64:
+      local Real64 p = getP
+      if(p > 1) p = 1
+      return interpolate(ANGLE, p) + temp_angle.value
+
+    method get_scale.Real64:
+      local Real64 p = getP
+      if(p > 1) p = 1
+      return interpolate(SCALE, p)
+
+    method get_start_position.Vector2:
+      return Vector2(interpolate(XCOORD, 0), interpolate(YCOORD, 0))
+
+    method get_stop_position.Vector2:
+      return Vector2(interpolate(XCOORD, 1), interpolate(YCOORD, 1))
+
+    method get_position.Vector2:
+      local Real64 p = getP
+      if(p > 1) p = 1
+      return Vector2(interpolate(XCOORD, p), interpolate(YCOORD, p))
+
+    method setup_position(Vector2 start_pos, Vector2 end_pos, Int32 interpolation_type):
+      values[XCOORD][0] = start_pos.x
+      values[YCOORD][0] = start_pos.y
+      values[XCOORD][1] = end_pos.x
+      values[YCOORD][1] = end_pos.y
+      meth[XCOORD] = interpolation_type
+      meth[YCOORD] = interpolation_type
+
+    method setup_position_relative(Vector2 start_pos, Vector2 end_offset, Int32 interpolation_type):
+      setup_position(start_pos, start_pos + end_offset, interpolation_type)
+
+  # ------------------------------------------------------------------------
+
+  #{*  Sets how opacity changes over time for this sprite.
+    *  Opacities are measured by a floating point value between
+    *  0 (fully transparent) and 1 (fully opaque).
+    *  @param start_opacity The initial opacity
+    *  @param end_opacity The final opacity
+    }#
+    method setup_fade(Real64 start_opacity, Real64 end_opacity):
+      setup_fade(start_opacity, end_opacity, LINEAR)
+
+    method setup_fade(Real64 opacity):
+      setup_fade(opacity, 0, NONE)
+
+    method setup_rotation(Radians start_radians, Radians end_radians):
+      setup_rotation(start_radians, end_radians, LINEAR)
+
+    method setup_rotation_degrees(Degrees start_degrees, Degrees end_degrees):
+      setup_rotation(start_degrees.to_Radians, end_degrees.to_Radians)
+
+    method setup_rotation(Real64 radreal):
+      setup_rotation(Radians(radreal))
+
+    method setup_rotation(Radians radians):
+      setup_rotation(radians, Radians(0), NONE)
+
+    method setup_rotation_degrees(Degrees degrees):
+      setup_rotation_degrees(degrees, 0, NONE)
+
+    method setup_scale(Real64 start_factor, Real64 end_factor):
+      setup_scale(start_factor, end_factor, LINEAR)
+
+    method setup_scale(Real64 scale_factor):
+      setup_scale(scale_factor, 0, NONE)
+
+    method setup_position(Vector2 start_pos, Vector2 end_pos):
+      setup_position(start_pos, end_pos, LINEAR)
+
+    method setup_position_relative(Vector2 start_pos, Vector2 end_offset):
+      setup_position(start_pos, start_pos + end_offset)
+
+    method setup_position(Vector2 pos):
+      setup_position(pos, Vector2(0,0), NONE)
+
+  # ------------------------------------------------------------------------
+
+    method getP.Real64:
+      if(cyclical) return (((clock.elapsed_ms - start_time) / duration_ms).wrapped(0, 1)).(Real64)
+      local Real64 p = (clock.elapsed_ms - start_time) / duration_ms
+      if(p < 0) p = 0
+      return p
+
+    method interpolate(Int32 switch, Real64 p).Real64:
+      which(meth[switch])
+        case NONE:
+          return values[switch][0]
+        case LINEAR:
+          return(values[switch][1] - values[switch][0]) * p + values[switch][0]
+        case SIN:
+          local Real64 v = sinr(p * pi / 2)
+          return(values[switch][1] - values[switch][0]) * v + values[switch][0]
+        case SIN_SHARP:
+          local Real64 v = 1 + sinr(p * pi / 2 + 3 * pi / 2)
+          return(values[switch][1] - values[switch][0]) * v + values[switch][0]
+        case OSCILLATE_LINEAR:
+          local Real64 v = p * 2
+          if(v > 1) v = 1 - (v - 1)
+          return(values[switch][1] - values[switch][0]) * v + values[switch][0]
+        case OSCILLATE_SIN:
+          local Real64 v = sinr(p * pi)
+          return(values[switch][1] - values[switch][0]) * v + values[switch][0]
+        case OSCILLATE_SIN_SHARP:
+          local Real64 v = 1 - abs(sinr(p * pi + pi / 2))
+          return(values[switch][1] - values[switch][0]) * v + values[switch][0]
+        others:
+          println("Bad interpolation method")
+          return values[switch][0]
+      endWhich
+
+    method draw.Logical:
+      local Real64 p
+
+      if(stopped)
+        if(!persist) return false
+        p = 1
+      else
+        p = getP
+        if(p > 1)
+          die
+          # die() might have reset() things, so check again...
+          p = getP
+          if(p > 1)
+            stop
+            return draw
+          endIf
+        endIf
+      endIf
+
+      local Real64 rotation = interpolate(ANGLE, p)
+      local Real64 opacity = interpolate(OPACITY, p)
+      local Vector2 coord = Vector2(interpolate(XCOORD, p), interpolate(YCOORD, p))
+      local Real64 scale = interpolate(SCALE, p)
+
+      local Real64 t = ((clock.elapsed_ms - start_time) / 1000.0)
+      # t is now how many seconds have elapsed.
+
+      coord += drift_direction * t
+      coord += gravity_direction * (t*t)
+
+      image.angle = Radians(rotation) + temp_angle
+      image.color = color
+      image.alpha = 255 * opacity
+
+      image.scale = scale
+      image.draw(coord)
+
+      return true
+
+    method reset:
+      clock.restart
+      stopped = false
+
+    method die:
+      # Can be overridden
+      # Never called if animation is cyclical
+endClass
+
+singleton class IPhone
+ method orient( Int32 dir ): native
+   # 0=up-side-up, 1=right-side-up, 2=down, 3=left
 endClass
 
