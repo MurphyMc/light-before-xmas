@@ -4,14 +4,14 @@ deferred singleton class Launch : Screen
   PROPERTIES
     ticks = 30 : Int32
   METHODS
-    method init:
+    method init
       #Display.scale_to_fit(1024,768)
       MainMenu
       TreeGame
 
-    #method draw:
+    #method draw
 
-    method update:
+    method update
       ticks--
       if (ticks < 0)
         replace_with(MainMenu, Screen.fade_between)
@@ -20,7 +20,7 @@ endClass
 
 deferred singleton class CreditsMenu : BaseMenuScreen
   METHODS
-    method init:
+    method init
       menu = Menu(Box(Corners(0,180,Display.size.x,Display.size.y - 40)))
       menu.target = this
       menu.add(MenuImage("title_credits.png"))
@@ -29,7 +29,7 @@ deferred singleton class CreditsMenu : BaseMenuScreen
       menu.add(MenuButton("Go Back"))
       menu.add(MenuSpacer(60))
 
-    method delayed_execute (Object action):
+    method delayed_execute (action : Object)
       println(".")
       if (action == "Go Back")
         #        pop
@@ -45,15 +45,15 @@ class BaseMenuScreen : Screen, MyScreen, MenuHost
     countdown : Int32
 
   METHODS
-    method on_resume:
+    method on_resume
       menu.current_offset = Vector2.zero
       menu.fly_in_right
 
-    method on_activate:
+    method on_activate
       menu.current_offset = Vector2.zero
       menu.fly_in_right
 
-    method update:
+    method update
       Music.tick
       menu.update
       if (entry is null) return
@@ -62,16 +62,16 @@ class BaseMenuScreen : Screen, MyScreen, MenuHost
       delayed_execute(entry)
       entry = null
 
-    method delayed_execute (Object action):
+    method delayed_execute (action : Object)
       # Override
 
-    method immediate_execute (Object action):
+    method immediate_execute (action : Object)
       # Override
       menu.fly_out_left
 
-    method check_dead.Logical:
+    method check_dead->Logical
       if (last_not_dead == -1) last_not_dead = running_ms
-      local var dead = false
+      local dead = false
       if (running_ms - last_not_dead > 1000)
         time_offset -= (running_ms - last_not_dead)
         dead = true
@@ -79,18 +79,18 @@ class BaseMenuScreen : Screen, MyScreen, MenuHost
       last_not_dead = running_ms
       return dead
 
-    method draw:
+    method draw
       if (check_dead) return
       TreeGame.bg.draw
       FlakeManager.draw
       menu.draw
 
-    method menu_selected (MenuEntry entry, Object identifier):
+    method menu_selected (entry : MenuEntry, identifier : Object)
       this.entry = entry
       immediate_execute(entry)
       countdown = 30
 
-    method on ( MouseEvent e ):
+    method on (e : MouseEvent)
       menu.on(e)
 endClass
 
@@ -101,7 +101,7 @@ deferred singleton class MainMenu : Screen, MenuHost, MyScreen
     countdown : Int32
     #xform = Transform.identity : Transform #create_from(Radians(pi), Vector2(1,1), Vector2(1023,767)) : Transform
   METHODS
-    method init:
+    method init
       #menu = Menu(Box(Vector2(Display.size.x/2,450),Vector2(0,748-450)))
       menu = Menu(Box(Vector2(Display.size.x/2,160),Vector2(0,748-160-20)))
       menu.target = this
@@ -114,21 +114,21 @@ deferred singleton class MainMenu : Screen, MenuHost, MyScreen
       TreeGame
       Music
 
-    method on_resume:
+    method on_resume
       menu.current_offset = Vector2.zero
       menu.fly_in_right
 
-    method on_activate:
+    method on_activate
       menu.current_offset = Vector2.zero
       menu.fly_in_right
 
-    method update:
+    method update
       Music.tick
       menu.update
       if (action is null) return
       countdown--
       if (countdown > 0) return
-      local var identifier = action
+      local identifier = action
       action = null
       if (identifier == "Start")
         replace_with(TreeGame, Screen.fade_between)
@@ -137,15 +137,15 @@ deferred singleton class MainMenu : Screen, MenuHost, MyScreen
       elseIf (identifier == "Credits")
         push(CreditsMenu)
       endIf
-    method draw:
+    method draw
       TreeGame.bg.draw
       FlakeManager.draw
       menu.draw
-    method menu_selected (MenuEntry entry, Object identifier):
+    method menu_selected (entry : MenuEntry, identifier : Object)
       menu.fly_out_left
       action = identifier
       countdown = 30
-    method on ( MouseEvent e ):
+    method on (e : MouseEvent)
       menu.on(e)
 endClass
 
@@ -159,14 +159,14 @@ deferred singleton class ScreenManager
     flipping = false :Logical
     flip_time : Int64
   METHODS
-    method init:
+    method init
 [if defined(IPHONE)]
       xform = Transform.create_from(Radians(pi), Vector2(1,1), Display.size - Vector2(1,1))#Vector2(1023,767))
       flipped = true
       Input.flip = true
       IPhone.orient = 3
 [endIf]
-    method flip (Logical v):
+    method flip (v : Logical)
       if (v == flipped) return
 
       Input.flip = v
@@ -187,9 +187,9 @@ deferred singleton class ScreenManager
       endIf
 
       flipped = v
-    method update:
+    method update
       if (not flipping) return
-      local Real64 p = (running_ms - flip_time) / 750.0
+      local p = (running_ms - flip_time) / 750.0 : Real64
       if (p > 1)
         p = 1
         flipping = false
@@ -213,9 +213,9 @@ endClass
 overlaying aspect MyScreen
   METHODS
 
-    method on (AccelerationEvent event):
+    method on (event : AccelerationEvent)
       #println(event.to_String + " " + event.orientation.to_String)
-      local Int32 o = sign(event.x)
+      local o = sign(event.x) : Int32
       if (abs(event.x) < 0.5) o = 0
       if (o != ScreenManager.next_orientation)
         ScreenManager.next_orientation = o
@@ -232,7 +232,7 @@ overlaying aspect MyScreen
 
       insertUnderlying
 
-    method draw:
+    method draw
       if (ScreenManager.flipping)
         ScreenManager.update
       else
@@ -240,7 +240,7 @@ overlaying aspect MyScreen
       endIf
       insertUnderlying
       if (ScreenManager.flipping)
-        local var b = Box(0,-300,Display.size.x,300)
+        local b = Box(0,-300,Display.size.x,300)
         b.fill(Color.black)
         b = Box(-300,-300,300,Display.size.y+600)
         b.fill(Color.black)
@@ -257,7 +257,7 @@ deferred singleton class OptionsMenu : Screen, MenuHost, MyScreen
     action : MenuEntry
     countdown : Int32
   METHODS
-    method init:
+    method init
       menu = Menu(Box(Corners(0,180,Display.size.x,Display.size.y - 40))) # Vector2(Display.size.x/2,500),Vector2(0,748-500)))
       menu.target = this
       menu.add(MenuImage("title_options.png"))
@@ -267,16 +267,16 @@ deferred singleton class OptionsMenu : Screen, MenuHost, MyScreen
       menu.add(MenuButton("Turn Sound Off"))
       menu.add(MenuButton("Go Back"))
       menu.add(MenuSpacer(60))
-    method on_activate:
+    method on_activate
       menu.current_offset = Vector2.zero
       menu.fly_in_right
-    method update:
+    method update
       Music.tick
       menu.update
       if (action is null) return
       countdown--
       if (countdown > 0) return
-      local var identifier = action.item.identifier
+      local identifier = action.item.identifier
       if (identifier == "Go Back")
         if (previous_screen == MainMenu)
           pop
@@ -297,18 +297,18 @@ deferred singleton class OptionsMenu : Screen, MenuHost, MyScreen
         SFX.enabled = false
       endIf
       action = null
-    method draw:
+    method draw
       TreeGame.bg.draw
       FlakeManager.draw
       menu.draw
-    method menu_selected (MenuEntry entry, Object identifier):
+    method menu_selected (entry : MenuEntry, identifier : Object)
       action = entry
       countdown = 2
       if (identifier == "Go Back")
         menu.fly_out_left
         countdown = 20
       endIf
-    method on( MouseEvent e ):
+    method on(e : MouseEvent)
       menu.on(e)
 endClass
 
@@ -318,7 +318,7 @@ deferred singleton class PauseMenu : Screen, MenuHost, MyScreen
     action : MenuEntry
     countdown : Int32
   METHODS
-    method init:
+    method init
       #menu = Menu(Box(Vector2(Display.size.x/2,350),Vector2(0,748-350)))
       menu = Menu(Box(Corners(0,180,Display.size.x,Display.size.y - 40)))
       menu.target = this
@@ -330,16 +330,16 @@ deferred singleton class PauseMenu : Screen, MenuHost, MyScreen
       menu.add(MenuSpacer(30))
       menu.add(MenuButton("Turn Music Off"))
       menu.add(MenuButton("Turn Sound Off"))
-    method on_activate:
+    method on_activate
       menu.current_offset = Vector2.zero
       menu.fly_in_bottom
-    method update:
+    method update
       Music.tick
       menu.update
       if (action is null) return
       countdown--
       if (countdown > 0) return
-      local var identifier = action.item.identifier
+      local identifier = action.item.identifier
       if (identifier == "Resume")
         pop(Screen.fade_between)
       elseIf (identifier == "New Game")
@@ -362,53 +362,53 @@ deferred singleton class PauseMenu : Screen, MenuHost, MyScreen
         SFX.enabled = false
       endIf
       action = null
-    method draw:
+    method draw
       TreeGame.bg.draw
       FlakeManager.draw
       menu.draw
-    method menu_selected (MenuEntry entry, Object identifier):
+    method menu_selected (entry : MenuEntry, identifier : Object)
       action = entry
       countdown = 2
       if (identifier == "Resume" or identifier == "New Game" or identifier == "Main Menu")
         menu.fly_out_bottom
         countdown = 20
       endIf
-    method on( MouseEvent e ):
+    method on(e : MouseEvent)
       menu.on(e)
 endClass
 
 abstract class MenuItem
   PROPERTIES
   METHODS
-    method on_in:
-    method on_out:
-    method on_down:
-    method on_up:
-    method draw (Vector2 position):
-    method update:
-    method size.Vector2:
+    method on_in
+    method on_out
+    method on_down
+    method on_up
+    method draw (position : Vector2)
+    method update
+    method size->Vector2
       return Vector2(0,0)
-    method hitbox.Box:
+    method hitbox->Box
       return Box(0,0,0,0)
-    method identifier.Object:
+    method identifier->Object
       return this
 endClass
 
 aspect MenuHost
   METHODS
-    method menu_selected (MenuEntry entry, Object identifier):
+    method menu_selected (entry : MenuEntry, identifier : Object)
 endAspect
 
 class MenuImage : MenuItem
   PROPERTIES
     img : Image
   METHODS
-    method init (img):
-    method init (String filename):
+    method init (img)
+    method init (filename : String)
       img = Image(filename)
-    method draw (Vector2 position):
+    method draw (position : Vector2)
       img.draw(position)
-    method size.Vector2:
+    method size->Vector2
       return img.size
 endClass
 
@@ -416,10 +416,10 @@ class MenuSpacer : MenuItem
   PROPERTIES
     _size : Vector2
   METHODS
-    method init (_size):
-    method init (Int32 s):
+    method init (_size)
+    method init (s : Int32)
       _size = Vector2(s, s)
-    method size.Vector2:
+    method size->Vector2
       return _size
 endClass
 
@@ -436,24 +436,24 @@ class MenuButton : MenuItem
     NORMAL = .90 : Real64
 
   METHODS
-    method identifier.Object:
+    method identifier->Object
       return text
 
-    method size.Vector2:
+    method size->Vector2
       return MenuManager.img_button.size
 
-    method hitbox.Box:
+    method hitbox->Box
       return Box(Vector2(0,0), MenuManager.img_button.size).cropped(3)
 
-    method init (text):
+    method init (text)
       cur_scale = NORMAL
       target_scale = NORMAL
 
-    method draw (Vector2 position):
+    method draw (position : Vector2)
       #MenuManager.img_button.handle = Handle.center
-      local var size = this.size
+      local size = this.size
       MenuManager.img_button.scale = cur_scale
-      local var s = MenuManager.img_button.size
+      local s = MenuManager.img_button.size
       s -= MenuManager.img_button.size * cur_scale
       position += s * .5
       size *= cur_scale
@@ -465,7 +465,7 @@ class MenuButton : MenuItem
       MenuManager.font.draw(text, position + size / 2)
       MenuManager.img_button.scale = 1
 
-    method update ():
+    method update ()
       if (not locked)
         if (highlight)
           target_scale = HIGHLIGHT
@@ -475,7 +475,7 @@ class MenuButton : MenuItem
       endIf
 
       if (cur_scale != target_scale)
-        local var d = 0.015
+        local d = 0.015
         if (cur_scale > target_scale)
           cur_scale -= d
           if (cur_scale < target_scale)
@@ -489,16 +489,16 @@ class MenuButton : MenuItem
         endIf
       endIf
 
-    method on_in:
+    method on_in
       highlight = true
       locked = false
-    method on_out:
+    method on_out
       highlight = false
       locked = false
-    method on_down:
+    method on_down
       highlight = true
       locked = false
-    method on_up:
+    method on_up
       highlight = false
       target_scale = NORMAL
       locked = true
@@ -519,7 +519,7 @@ singleton deferred class MenuManager
     highlight("sounds/sfx_tock.wav", 3) : SoundEffect
 
   METHODS
-    method init:
+    method init
       font.handle = Handle(Vector2(0, -3), Handle.center)
       font.adjust_character_widths(-6)
 endClass
@@ -542,64 +542,64 @@ class Menu
     _current : MenuEntry
 
   METHODS
-    method fly_out_left:
+    method fly_out_left
       target_offset = Display.size * Vector2(-1, 0)
 
-    method fly_out_bottom:
+    method fly_out_bottom
       target_offset = Display.size * Vector2(0, 1)
 
-    method fly_in_right:
+    method fly_in_right
       target_offset = current_offset
       current_offset = Display.size * Vector2(1, 0)
 
-    method fly_in_bottom:
+    method fly_in_bottom
       target_offset = current_offset
       current_offset = Display.size * Vector2(0, 1)
 
-    method init ():
+    method init ()
       box = Box(Vector2(0,0),Display.size).cropped(100)
 
-    method init (box):
+    method init (box)
 
-    method justify_left:
+    method justify_left
       justify = 0
       _dirty = true
-    method justify_right:
+    method justify_right
       justify = 2
       _dirty = true
-    method justify_centered:
+    method justify_centered
       justify = 1
       _dirty = true
 
-    method add (MenuItem item):
+    method add (item : MenuItem)
       _dirty = true
       entries.add(MenuEntry(item))
 
-    method _getmaj (Vector2 v).Real64:
+    method _getmaj (v : Vector2)->Real64
       if (horizontal) return v.x
       return v.y
-    method _getmin (Vector2 v).Real64:
+    method _getmin (v : Vector2)->Real64
       if (horizontal) return v.y
       return v.x
-    method _vec (Real64 minor, Real64 major).Vector2:
+    method _vec (minor : Real64, major : Real64)->Vector2
       if (horizontal) return Vector2(major, minor)
       return Vector2(minor, major)
 
-    method refresh:
+    method refresh
       if (not _dirty) return
       _dirty = false
 
-      local Real64 total_major = 0
+      local total_major = 0 : Real64
       forEach (entry in entries)
         total_major += _getmaj(entry.item.size)
       endForEach
-      local Real64 leftover_major = _getmaj(box.size) - total_major
-      local var padding_major = leftover_major / max(1, entries.count - 1)
+      local leftover_major = _getmaj(box.size) - total_major : Real64
+      local padding_major = leftover_major / max(1, entries.count - 1)
 
       total_major = 0
-      local Int32 i = 0
+      local i = 0 : Int32
       forEach (entry in entries)
-        local Real64 minor = _getmin(box.position)
+        local minor = _getmin(box.position) : Real64
         which (justify)
           case 0:
             # Nothing
@@ -614,7 +614,7 @@ class Menu
         i++
       endForEach
 
-    method update:
+    method update
       current_offset = current_offset * .8 + target_offset * .2
       #if (current_offset.x < 5) current_offset = Vector2(0, current_offset.y)
       #if (current_offset.y < 5) current_offset = Vector2(current_offset.x, 0)
@@ -624,7 +624,7 @@ class Menu
         entry.item.update
       endForEach
 
-    method update_current (Logical check_button_state = true):
+    method update_current (check_button_state = true : Logical)
       local MenuEntry entry = find_under(check_button_state)
       if (entry == null)
         if (_current?)
@@ -640,7 +640,7 @@ class Menu
         #MenuManager.highlight.play
       endIf
 
-    method on ( MouseEvent e ):
+    method on (e : MouseEvent)
       which (e.type)
         case MouseEvent.button_press:
           update_current
@@ -659,9 +659,9 @@ class Menu
           update_current
       endWhich
 
-    method find_under (Logical check_button_state = true).MenuEntry:
+    method find_under (check_button_state = true : Logical)->MenuEntry
       if (check_button_state)
-        local var good = false
+        local good = false
         forEach (i in 0..Input.mouse_button_state.count-1)
           if (Input.mouse_button_state[i]) good = true
         endForEach
@@ -669,28 +669,28 @@ class Menu
       endIf
 
       forEach (entry in entries)
-        local var p = entry.position + current_offset
+        local p = entry.position + current_offset
         if ((entry.item.hitbox + p).contains(Input.mouse_position))
           return entry
         endIf
       endForEach
       return null
 
-      #method current_offset.Vector2:
+      #method current_offset->Vector2
       #  return Vector2.zero
 
-    method draw:
+    method draw
       refresh
       update_current
       forEach (entry in entries)
-        local var p = entry.position + current_offset
+        local p = entry.position + current_offset
         entry.item.draw(p)
       endForEach
       #{
-      local var current = _current
-      local var hit = false
+      local current = _current
+      local hit = false
       forEach (entry in entries)
-        local var p = entry.position
+        local p = entry.position
         if ((entry.item.hitbox + p).contains(Input.mouse_position))
           hit = true
           if (entry != current)
@@ -737,22 +737,22 @@ deferred singleton class TreeGame : Screen, MyScreen
     last_slow_timer : Int64
 
   METHODS
-    method random_on_map (Bitmap map).Vector2:
+    method random_on_map (map : Bitmap)->Vector2
       while (true)
-        local var p = Vector2(random_Int32(0, map.size.x), random_Int32(0, map.size.y))
-        local Int32 pixel = map.get(p.x, p.y).argb
+        local p = Vector2(random_Int32(0, map.size.x), random_Int32(0, map.size.y))
+        local pixel = map.get(p.x, p.y).argb : Int32
         if ((pixel & 0xFFffFF) == 0)
           return p
         endIf
       endWhile
 
-    method random_star_sparkle:
-      local var p = random_on_map(star_sparkle_map)
+    method random_star_sparkle
+      local p = random_on_map(star_sparkle_map)
       TreeGame.spark.color = Color(HSV(.1666, random_Real64(0,1), 1))
 
-      local var s = SimpleSpriteAnimation(TreeGame.spark, 900)
+      local s = SimpleSpriteAnimation(TreeGame.spark, 900)
 
-      local var d = random_Real64(40, 90)
+      local d = random_Real64(40, 90)
       if (random_Real64 < .5) d *= -1
       s.setup_rotation_degrees(Degrees(0), Degrees(d))
       s.setup_scale(0, 1.5, SimpleSpriteAnimation.OSCILLATE_SIN_SHARP)
@@ -763,7 +763,7 @@ deferred singleton class TreeGame : Screen, MyScreen
 
       star_sparkles.add(s)
 
-    method random_sparkle:
+    method random_sparkle
       if (random_Real64 < .5)
         random_star_sparkle
       else
@@ -771,12 +771,12 @@ deferred singleton class TreeGame : Screen, MyScreen
       endIf
 
 
-    method random_tree_sparkle:
-      local var p = random_on_map(tree_sparkle_map)
+    method random_tree_sparkle
+      local p = random_on_map(tree_sparkle_map)
       TreeGame.spark.color = Color(HSV(random_Real64, random_Real64(.5,.8), random_Real64(.8,1)))
-      local var s = OverexposedSimpleSpriteAnimation(TreeGame.spark, 900)
+      local s = OverexposedSimpleSpriteAnimation(TreeGame.spark, 900)
 
-      local var d = random_Real64(40, 90)
+      local d = random_Real64(40, 90)
       if (random_Real64 < .5) d *= -1
       s.setup_rotation_degrees(Degrees(0), Degrees(d))
       s.setup_scale(0, 1.5, SimpleSpriteAnimation.OSCILLATE_SIN_SHARP)
@@ -787,7 +787,7 @@ deferred singleton class TreeGame : Screen, MyScreen
 
       tree_sparkles.add(s)
 
-    method init:
+    method init
       spark.handle = Handle.center
       spark.blend = Blend.overexpose
 
@@ -801,18 +801,18 @@ deferred singleton class TreeGame : Screen, MyScreen
       Music.tick
       #Display.background_color = Color(255,255,255)
 
-    method on_activate:
+    method on_activate
       tree = Tree(17)
       tree.resume
       last_slow_timer = running_ms
 
-    method on_resume:
+    method on_resume
       tree.resume
       last_slow_timer = running_ms
 
-    method check_dead.Logical:
+    method check_dead->Logical
       #println(running_ms - last_slow_timer)
-      local var dead = false
+      local dead = false
       if (running_ms - last_slow_timer > 5000)
         time_offset -= (running_ms - last_slow_timer)
         if (not tree.solved)
@@ -824,7 +824,7 @@ deferred singleton class TreeGame : Screen, MyScreen
       last_slow_timer = running_ms
       return dead
 
-    method update:
+    method update
       # Update your game state here.
       # You can check Input.key_state[Key.keycode_a] and
       # Input.mouse_button_state[1+] to check for keys and buttons being held
@@ -836,12 +836,12 @@ deferred singleton class TreeGame : Screen, MyScreen
         slow_timer
       endIf
 
-    method slow_timer:
+    method slow_timer
       # Called every second or two
       Music.tick
 
 
-    method draw:
+    method draw
       if (check_dead)
         prior.draw
         return
@@ -863,20 +863,20 @@ endIf
       SystemFont.handle = Handle.center
       if (tree.solved)
 if (random_Real64 < .04) random_star_sparkle
-        local Real64 p = (running_ms - tree.solved_ms) / 400.0
+        local p = (running_ms - tree.solved_ms) / 400.0 : Real64
         if (p > 1) p = 1
         starpic.color = Color(255,255,255,255*p)
         starpic.draw(Vector2(380,0))
         star_sparkles.draw
       endIf
       timer_font.handle = Handle.top_right
-      local var pos = Display.size * Vector2(1, 0) + Vector2(-6, 1)
+      local pos = Display.size * Vector2(1, 0) + Vector2(-6, 1)
       timer_font.color = Color.black
       timer_font.draw(tree.time_string, pos + Vector2(2,2))
       timer_font.color = Color.white
       timer_font.draw(tree.time_string, pos)
 
-      local var button = flake_button
+      local button = flake_button
       button.scale = 1
       button.angle = Radians(0)
       button.color = Color(0,0,0,192)
@@ -887,7 +887,7 @@ if (random_Real64 < .04) random_star_sparkle
       #button.draw(Vector2(40, 40))
 
 
-    method on( MouseEvent e ):
+    method on(e : MouseEvent)
       which (e.type)
         case MouseEvent.button_press:
           if (e.position.x < 85 and e.position.y < 85)
@@ -901,8 +901,8 @@ if (random_Real64 < .04) random_star_sparkle
         case MouseEvent.button_release:
 
           if (e.button == last_button)
-            local var x = e.position.x - last_position.x
-            local var y = e.position.y  - last_position.y
+            local x = e.position.x - last_position.x
+            local y = e.position.y  - last_position.y
 
             #println(x + " " + y)
 
@@ -933,14 +933,14 @@ if (random_Real64 < .04) random_star_sparkle
             if (x == y)
               if (e.button != 1) x *= -1
               if (Input.shift_pressed and x == 0) x = -1
-              local var pos = last_position * .8 + e.position * .2
+              local pos = last_position * .8 + e.position * .2
               tree.click(pos, x < 0)
             endIf
           endIf
         case MouseEvent.movement:
       endWhich
 
-    method on( KeyEvent e ):
+    method on(e : KeyEvent)
       which (e.type)
         case KeyEvent.press:
           if (e.keycode == Key.keycode_escape) System.exit
@@ -959,17 +959,17 @@ class Pair<<$AType, $BType>>
     b : $BType
 
   METHODS
-    method init:
+    method init
       # Nothing
 
-    method init ($AType _a, $BType _b)
+    method init (_a : $AType, _b : $BType)
       a = _a
       b = _b
 
-    method hash_code.Int32:
+    method hash_code->Int32
       return a.hash_code | b.hash_code
 
-    method to_String.String:
+    method to->String
       return "<Pair: $, $>" (a, b)
 endClass
 
@@ -980,16 +980,16 @@ class LitSets
     lit() : Tile[]
     unlit() : Tile[]
   METHODS
-    method init:
+    method init
 endClass
 
 augment Global
   PROPERTIES
     time_offset : Int64
   METHODS
-    method sinr (Real64 r).Real64:
+    method sinr (r : Real64)->Real64
       return sin(Radians(r))
-    method running_ms.Int64:
+    method running_ms->Int64
       return time_ms + time_offset
 endAugment
 
@@ -1004,7 +1004,7 @@ singleton deferred class FlakeManager
 
     next_add : Int64
   METHODS
-    method init:
+    method init
       forEach (i in 1..6)
         images.add(Image("flakes/flake$.png" (i)))
         images.last.handle = Handle.center
@@ -1013,11 +1013,11 @@ singleton deferred class FlakeManager
       flakes.add(Flake())
       next_add = running_ms + random_Int32(add_delay_min, add_delay_max)
 
-    method draw:
+    method draw
       forEach (i in 0..flakes.count-1)
-        local var flake = flakes[i]
-        local var p = flake.pos
-        local var t = flake.t
+        local flake = flakes[i]
+        local p = flake.pos
+        local t = flake.t
 
         p += (flake.vel * t)
 
@@ -1060,9 +1060,9 @@ class Flake
     sway_period2 = random_Real64(6, 12) : Real64
     sway_offset2 = random_Real64(0, .5) : Real64
   METHODS
-    method t.Real64:
+    method t->Real64
       return (running_ms - start_ms) / 1000.0
-    method init:
+    method init
       while (abs(rotation.value) < 8)
         rotation = Degrees(random_Real64(-10, 25))
       endWhile
@@ -1084,31 +1084,31 @@ class Tree
     t : ArrayList<<ArrayList<<Tile>>>>
 
   METHODS
-    method pause (Int64 time = running_ms):
+    method pause (time = running_ms : Int64)
       if (solved) return
       if (pause_start != -1) return
 
       pause_start = time
 
-    method resume:
+    method resume
       if (pause_start == -1) return
 
       started_ms += (running_ms - pause_start)
 
       pause_start = -1
-    method solved (Logical v):
+    method solved (v : Logical)
       &solved = v
       if (v)
         solved_ms = running_ms
         SFX.jingle.play
       endIf
 
-    method pad (Int64 n).String:
+    method pad (n : Int64)->String
       if (n < 10) return "0" + n
       return "" + n
 
-    method time_string.String:
-      local var sec = 0
+    method time_string->String
+      local sec = 0
       if (solved)
         sec = ((solved_ms - started_ms) / 1000)
       else
@@ -1116,30 +1116,30 @@ class Tree
       endIf
       return pad(sec / 60) + ":" + pad(sec % 60)
 
-    method get (Int32 x, Int32 y).Tile:
+    method get (x : Int32, y : Int32)->Tile
       if (y < 0) return null
       if (y >= t.count) return null
-      local var d = (t.last.count - t[y].count) / 2
+      local d = (t.last.count - t[y].count) / 2
       x = x - d
       if (x < 0) return null
       if (x >= t[y].count) return null
       return t[y][x]
 
-    method height.Int32:
+    method height->Int32
       return t.count
 
-    method size.Int32:
+    method size->Int32
       return (width - 1) / 2
 
-    method make_row (Int32 w).ArrayList<<Tile>>:
-      local Int32 o = (width - w) / 2
+    method make_row (w : Int32)->ArrayList<<Tile>>
+      local o = (width - w) / 2 : Int32
       local ArrayList<<Tile>> r = ArrayList<<Tile>>()
       forEach (i in 0..w-1)
         r.add(Tile(this, o + i))
       endForEach
       return r
 
-    method init (Int32 base_width):
+    method init (base_width : Int32)
       width = base_width
 
       t = ArrayList<<ArrayList<<Tile>>>>()
@@ -1152,14 +1152,14 @@ class Tree
       source.target_lit = 1
 
       t.insert(make_row(width), 0)
-      local Int32 s = width
+      local s = width : Int32
       while (s >= 3)
         t.insert(make_row(s), 0)
         s = s - 2
       endWhile
 
       num_pieces = 1 # 1 for the root piece
-      local Int32 y = 0
+      local y = 0 : Int32
       forEach (r in t)
         if (r != t.last) num_pieces += r.count
         forEach (c in r)
@@ -1173,7 +1173,7 @@ class Tree
 
       relight
 
-    method reset:
+    method reset
       local ArrayList<<Tile>> tiles()
       forEach (r in t)
         if (r == t.last) escapeForEach
@@ -1183,27 +1183,27 @@ class Tree
       endForEach
 
       while (tiles.count > 0)
-        local var c = tiles.random()
+        local c = tiles.random()
         if (c.try_connect)
           tiles.remove_value(c)
         endIf
       endWhile
 
-    method click (Vector2 pos, Logical alternate):
+    method click (pos : Vector2, alternate : Logical)
       if (solved) return
       pos = pos - draw_pos
-      local Int32 x = pos.x + TileImages.imgs[0].size.x / 2
-      local Int32 y = pos.y + TileImages.imgs[0].size.y / 2
+      local x = pos.x + TileImages.imgs[0].size.x / 2 : Int32
+      local y = pos.y + TileImages.imgs[0].size.y / 2 : Int32
       x /= TileImages.imgs[0].size.x
       y /= TileImages.imgs[0].size.y
-      local var tile = get(x, y)
+      local tile = get(x, y)
       if (tile == null) return
       if (tile.y == height - 1) return
 
       tile.rotate(alternate)
 
-    method randomize:
-      local var rots = ArrayList<<Int32>>(0..3)
+    method randomize
+      local rots = ArrayList<<Int32>>(0..3)
       forEach (r in t)
         forEach (c in r)
           if (c != source)
@@ -1214,12 +1214,12 @@ class Tree
         endForEach
       endForEach
       if (Input.shift_pressed)
-        local var c = t[0][0]
+        local c = t[0][0]
         c.value = c.ror(c.value, 1) #rots.random())
       endIf
 
-    method lit_and_unlit_sets (Logical unlight = false).LitSets:
-      local var o = LitSets()
+    method lit_and_unlit_sets (unlight = false : Logical)->LitSets
+      local o = LitSets()
 
       forEach (r in t)
         if (not (r is t.last))
@@ -1241,15 +1241,15 @@ class Tree
 
       return o
 
-    method relight ():
-      #method relight (Int64 finish_time):
-      local var prev = lit_and_unlit_sets(true)
+    method relight ()
+      #method relight (Int64 finish_time)
+      local prev = lit_and_unlit_sets(true)
       source.spark_dirs = 0
 
       solved = false
       source.spread
 
-      local var cur = lit_and_unlit_sets
+      local cur = lit_and_unlit_sets
       #cur.lit.intersect(prev.unlit)
       #cur.unlit.intersect(prev.lit)
       # lit and unlit are now just the changed ones
@@ -1271,21 +1271,21 @@ class Tree
         c.target_lit = 0
       endForEach
 
-    method update:
+    method update
       forEach (r in t)
         forEach (c in r)
           c.update
         endForEach
       endForEach
 
-    method draw:
+    method draw
       forEach (r in t)
         forEach (c in r)
           c.draw
         endForEach
       endForEach
 
-    method make_sparks:
+    method make_sparks
       forEach (r in t)
         forEach (c in r)
           c.make_sparks
@@ -1319,10 +1319,10 @@ class Tile
 
     spark_dirs : Int32
   METHODS
-    method hash_code.Int32:
+    method hash_code->Int32
       return x.right_shifted(16) | y
 
-    method lit (Logical v):
+    method lit (v : Logical)
       if (v != &lit)
         if (target_lit != cur_lit)
           #double p = cur_lit
@@ -1332,15 +1332,15 @@ class Tile
       endIf
       &lit = v
 
-    method rotation.Degrees:
+    method rotation->Degrees
       if (!rotating) return Degrees(&rotation)
 
       return Degrees(cur_rot)
 
-    method rotating.Logical:
+    method rotating->Logical
       return cur_rot != &rotation
 
-    method rotate (Logical left):
+    method rotate (left : Logical)
       #SFX.swish1.play
       if (left)
         &value = rol(value, 1)
@@ -1349,7 +1349,7 @@ class Tile
       endIf
 
 
-      local var ora = rot_amount
+      local ora = rot_amount
 
       rot_amount = 10
       if (left)
@@ -1364,13 +1364,13 @@ class Tile
       endIf
 
       tree.relight
-      local var good = false
+      local good = false
       if (lit?)
         good = true
         forEach (i in 0..3)
-          local var b = 1.left_shifted(i)
+          local b = 1.left_shifted(i)
           if ((b & value) > 0)
-            local var n = neighbor(b)
+            local n = neighbor(b)
             if (n == null or ((n.value & opp(b)) == 0))
               good = false
               escapeForEach
@@ -1384,15 +1384,15 @@ class Tile
         SFX.swish1.play
       endIf
 
-    method rol (Int32 b, Int32 n=1).Int32:
+    method rol (b : Int32, n=1 : Int32)->Int32
       if (n == 0) return b & 15
       return rol((b & 1).left_shifted(3) | b.right_shifted(1), n - 1)
 
-    method ror (Int32 b, Int32 n=1).Int32:
+    method ror (b : Int32, n=1 : Int32)->Int32
       if (n == 0) return b & 15
       return ror((b & 8).right_shifted(3) | b.left_shifted(1), n - 1)
 
-    method neighbor (Int32 v).Tile:
+    method neighbor (v : Int32)->Tile
       which (v)
         case 1: return tree.get(x, y-1)
         case 2: return tree.get(x+1, y)
@@ -1401,12 +1401,12 @@ class Tile
       endWhich
       return null
 
-    method try_connect.Logical:
+    method try_connect->Logical
       if (ready) return false
-      local var dirs = {1,2,4,8}
+      local dirs = {1,2,4,8}
       dirs.shuffle()
       forEach (d in dirs)
-        local var n = neighbor(d)
+        local n = neighbor(d)
         if (n != null)
           if (n.ready)
             value = value | d
@@ -1419,14 +1419,14 @@ class Tile
 
       return false
 
-    method init (Tree parent, Int32 x_):
+    method init (parent : Tree, x_ : Int32)
       tree = parent
       x = x_
       lit = false
       ready = false
       value = 0
 
-    method update:
+    method update
       cur_lit = cur_lit * .95 + target_lit * .05
 
       if (abs(rot_amount) > 5)
@@ -1453,17 +1453,17 @@ class Tile
       endIf
 
 
-    method draw ():
+    method draw ()
       if (index == -1) return
       local Image img = TileImages.imgs[index]
-      local Logical finish = rotating
+      local finish = rotating : Logical
       img.angle = rotation
       finish = finish and !rotating
-      local Int32 sx = img.size.x
-      local Int32 sy = img.size.y
-      local Int32 alpha = 255
+      local sx = img.size.x : Int32
+      local sy = img.size.y : Int32
+      local alpha = 255 : Int32
       if (tree.solved)
-        local Real64 p = (running_ms - tree.solved_ms) / 1000.0
+        local p = (running_ms - tree.solved_ms) / 1000.0 : Real64
         if (p > .75) p = .75
         p = 1 - p
         alpha = p * 255
@@ -1488,12 +1488,12 @@ class Tile
         tree.relight
       endIf
 
-    method make_sparks ():
+    method make_sparks ()
       if (spark_dirs == 0) return
       if (rotating) return
 
-      local Int32 b = 1
-      local var s = spark_dirs
+      local b = 1 : Int32
+      local s = spark_dirs
       while (s > 0)
         if ((s & 1) == 1)
           spark(b)
@@ -1502,11 +1502,11 @@ class Tile
         s = s.right_shifted(1)
       endWhile
 
-    method spark (Int32 d):
+    method spark (d : Int32)
       if (random_Real64 < 0.96) return
 
-      local Vector2 p = Vector2(0, 0)
-      local Vector2 o = Vector2(0, 0)
+      local p = Vector2(0, 0)
+      local o = Vector2(0, 0)
       which (d)
         case 1:
           p = Vector2(0, -1)
@@ -1521,19 +1521,19 @@ class Tile
           p = Vector2(-1, 0)
           o = Vector2(0, 1)
       endWhich
-      local var v = p
+      local v = p
       p *= (TileImages.imgs[0].size * .5)
-      local var shift = random_Real64(-6,6)
+      local shift = random_Real64(-6,6)
       p += o * shift
 
-      local Real64 dir = -1
+      local dir = -1 : Real64
       if (shift > 0) dir = -dir
       if (d == 4 or d == 8) dir = -dir
 
       p += Vector2(x, y) * TileImages.imgs[0].size + tree.draw_pos
 
       TreeGame.spark.color = Color(255, 255, 0)
-      local var s = SimpleSpriteAnimation(TreeGame.spark, 150)
+      local s = SimpleSpriteAnimation(TreeGame.spark, 150)
 
       v = v.rotated(Degrees(random_Real64(0,45)*dir)) * TileImages.imgs[0].size * 0.25
       s.setup_position_relative(p, v)
@@ -1543,21 +1543,21 @@ class Tile
 
       TreeGame.sparks.add(s)
 
-    method opp (Int32 v).Int32:
+    method opp (v : Int32)->Int32
       return ror(v, 2)
 
-    method spread ().Int32:
+    method spread ()->Int32
 
       if (lit? == false) return 0
       if (rotating) return 0
 
-      local Int32 children = 0
+      local children = 0 : Int32
       children++ # Myself
 
       forEach (i in 0..3)
-        local var b = 1.left_shifted(i)
+        local b = 1.left_shifted(i)
         if ((b & value) > 0)
-          local var n = neighbor(b)
+          local n = neighbor(b)
           if (n != null)
             if ((n.value & opp(b)) > 0)
               if (n.lit? == false)
@@ -1583,11 +1583,11 @@ class Tile
 
       return children
 
-    method value ( Int32 v ):
+    method value (v : Int32)
       &value = v
       #if (ready) spread
 
-      local Int32 rot = 0
+      local rot = 0 : Int32
       which (v)
         case 1,2,4,8:
           index = 0
@@ -1622,12 +1622,12 @@ singleton class TileImages
     imgs() : Image[]
     bulb : Image
   METHODS
-    method add_img (String name):
+    method add_img (name : String)
       local Image img = Image(name)
       imgs.add(img)
       img.handle = Handle.center
 
-    method init:
+    method init
       bulb = Image("bulb.png")
       bulb.handle = Handle.center
       add_img("1.png")
@@ -1651,11 +1651,11 @@ singleton deferred class Music
     is_paused = true: Logical
 
   METHODS
-    method init:
+    method init
       #local File dir = File(".")
       #dir = File(dir.absolute_filepath, "sounds")
       #dir = File(dir.absolute_filepath, "music")
-      local var files = {
+      local files = {
         "dance-of-the-sugar-plum-faries.mp3",
         "jingle-bells-slow-mix.mp3",
         "oh-christmas-tree.mp3",
@@ -1664,7 +1664,7 @@ singleton deferred class Music
       forEach (entry in files) #dir.directory_listing)
         #tracks.add(Sound("sounds/music/" + entry))
         tracks.add(Sound(entry))
-        local var words = entry.replace("-", " ").before_last('.').split(' ')
+        local words = entry.replace("-", " ").before_last('.').split(' ')
         local StringBuilder n()
         forEach (word in words)
           n.print(word.capitalized)
@@ -1673,7 +1673,7 @@ singleton deferred class Music
         names.add(n.to_String.trim)
       endForEach
 
-      local var order = ArrayList<<Int32>>(0..(tracks.count - 1))
+      local order = ArrayList<<Int32>>(0..(tracks.count - 1))
       order.shuffle
       forEach (o in order)
         names.add(names[o])
@@ -1684,10 +1684,10 @@ singleton deferred class Music
         tracks.remove(0)
       endForEach
 
-    method toggle_pause:
+    method toggle_pause
       paused = not paused
 
-    method next_track:
+    method next_track
       if (tracks.count == 0)
         index = -1
         return
@@ -1705,7 +1705,7 @@ singleton deferred class Music
       paused = false
       is_paused = false
 
-    method tick.Logical:
+    method tick->Logical
       if (paused != is_paused)
         is_paused = paused
         if (paused)
@@ -1752,8 +1752,8 @@ endClass
 
 class SoundEffect : Sound
   METHODS
-    method play:
-      if(SFX.enabled) prior.play(true)
+    method play
+      if (SFX.enabled) prior.play(true)
 endClass
 
 
@@ -1777,10 +1777,10 @@ class MultiDrawable : Drawable
     _removed() : Drawable[]
     _drawing = false : Logical
   METHODS
-    method init (die_when_empty = false):
+    method init ()
       children = ArrayList<<Drawable>>()
 
-    method remove (Drawable d):
+    method remove (d : Drawable)
       if (_drawing)
         _removed.add(d)
       else
@@ -1790,15 +1790,15 @@ class MultiDrawable : Drawable
         endTry
       endIf
 
-    method add (Drawable d):
+    method add (d : Drawable)
       children.add(d)
 
-    method draw.Logical:
+    method draw->Logical
       local Int32[] removed = null
       _drawing = true
-      local Logical r = false
+      local r = false : Logical
       forEach (i in 0..children.count-1)
-        local var d = children[i]
+        local d = children[i]
         try
           r = d.draw
         catch (Exception e)
@@ -1833,7 +1833,7 @@ endClass
 
 class OverexposedSimpleSpriteAnimation : SimpleSpriteAnimation
   METHODS
-    method draw.Logical:
+    method draw->Logical
       image.blend = Blend.normal
       prior.draw
       image.blend = Blend.overexpose
@@ -1920,14 +1920,14 @@ class SimpleSpriteAnimation : Drawable, Updatable
   _/ \_
   }#
 
-    method remove:
+    method remove
       stop
       persist = false
 
-    method init(image,duration_ms):
+    method init(image, duration_ms)
       init(image,duration_ms,Vector2(0,0))
 
-    method init(image,duration_ms,Vector2 coord):
+    method init(image, duration_ms, coord : Vector2)
 
       reset
 
@@ -1938,7 +1938,7 @@ class SimpleSpriteAnimation : Drawable, Updatable
 
       color = image.color
 
-    method stop:
+    method stop
       stopped = true
 
   # ------------------------------------------------------------------------
@@ -1949,51 +1949,51 @@ class SimpleSpriteAnimation : Drawable, Updatable
     *  @param start_opacity The initial opacity
     *  @param end_opacity The final opacity
     }#
-    method setup_fade(Real64 start_opacity, Real64 end_opacity, Int32 interpolation_type):
+    method setup_fade(start_opacity : Real64, end_opacity : Real64, interpolation_type : Int32)
       values[OPACITY][0] = start_opacity
       values[OPACITY][1] = end_opacity
       meth[OPACITY] = interpolation_type
 
-    method setup_rotation(Radians start_radians, Radians end_radians, Int32 interpolation_type):
+    method setup_rotation(start_radians : Radians, end_radians : Radians, interpolation_type : Int32)
       values[ANGLE][0] = start_radians.value
       values[ANGLE][1] = end_radians.value
       meth[ANGLE] = interpolation_type
 
-    method setup_rotation_degrees(Radians start_degrees, Radians end_degrees, Int32 interpolation_type):
+    method setup_rotation_degrees(start_degrees : Radians, end_degrees : Radians, interpolation_type : Int32)
       setup_rotation(start_degrees * pi / 180, end_degrees * pi / 180, interpolation_type)
 
-    method setup_scale(Real64 start_factor, Real64 end_factor, Int32 interpolation_type):
+    method setup_scale(start_factor : Real64, end_factor : Real64, interpolation_type : Int32)
       values[SCALE][0] = start_factor
       values[SCALE][1] = end_factor
       meth[SCALE] = interpolation_type
 
-    method get_fade.Real64:
-      local Real64 p = getP
-      if(p > 1) p = 1
+    method get_fade->Real64
+      local p = getP : Real64
+      if (p > 1) p = 1
       return interpolate(OPACITY, p)
 
-    method get_angle.Real64:
-      local Real64 p = getP
-      if(p > 1) p = 1
+    method get_angle->Real64
+      local p = getP : Real64
+      if (p > 1) p = 1
       return interpolate(ANGLE, p) + temp_angle.value
 
-    method get_scale.Real64:
-      local Real64 p = getP
-      if(p > 1) p = 1
+    method get_scale->Real64
+      local p = getP : Real64
+      if (p > 1) p = 1
       return interpolate(SCALE, p)
 
-    method get_start_position.Vector2:
+    method get_start_position->Vector2
       return Vector2(interpolate(XCOORD, 0), interpolate(YCOORD, 0))
 
-    method get_stop_position.Vector2:
+    method get_stop_position->Vector2
       return Vector2(interpolate(XCOORD, 1), interpolate(YCOORD, 1))
 
-    method get_position.Vector2:
-      local Real64 p = getP
-      if(p > 1) p = 1
+    method get_position->Vector2
+      local p = getP : Real64
+      if (p > 1) p = 1
       return Vector2(interpolate(XCOORD, p), interpolate(YCOORD, p))
 
-    method setup_position(Vector2 start_pos, Vector2 end_pos, Int32 interpolation_type):
+    method setup_position(start_pos : Vector2, end_pos : Vector2, interpolation_type : Int32)
       values[XCOORD][0] = start_pos.x
       values[YCOORD][0] = start_pos.y
       values[XCOORD][1] = end_pos.x
@@ -2001,7 +2001,7 @@ class SimpleSpriteAnimation : Drawable, Updatable
       meth[XCOORD] = interpolation_type
       meth[YCOORD] = interpolation_type
 
-    method setup_position_relative(Vector2 start_pos, Vector2 end_offset, Int32 interpolation_type):
+    method setup_position_relative(start_pos : Vector2, end_offset : Vector2, interpolation_type : Int32)
       setup_position(start_pos, start_pos + end_offset, interpolation_type)
 
   # ------------------------------------------------------------------------
@@ -2012,102 +2012,102 @@ class SimpleSpriteAnimation : Drawable, Updatable
     *  @param start_opacity The initial opacity
     *  @param end_opacity The final opacity
     }#
-    method setup_fade(Real64 start_opacity, Real64 end_opacity):
+    method setup_fade(start_opacity : Real64, end_opacity : Real64)
       setup_fade(start_opacity, end_opacity, LINEAR)
 
-    method setup_fade(Real64 opacity):
+    method setup_fade(opacity : Real64)
       setup_fade(opacity, 0, NONE)
 
-    method setup_rotation(Radians start_radians, Radians end_radians):
+    method setup_rotation(start_radians : Radians, end_radians : Radians)
       setup_rotation(start_radians, end_radians, LINEAR)
 
-    method setup_rotation_degrees(Degrees start_degrees, Degrees end_degrees):
+    method setup_rotation_degrees(start_degrees : Degrees, end_degrees : Degrees)
       setup_rotation(start_degrees.to_Radians, end_degrees.to_Radians)
 
-    method setup_rotation(Real64 radreal):
+    method setup_rotation(radreal : Real64)
       setup_rotation(Radians(radreal))
 
-    method setup_rotation(Radians radians):
+    method setup_rotation(radians : Radians)
       setup_rotation(radians, Radians(0), NONE)
 
-    method setup_rotation_degrees(Degrees degrees):
+    method setup_rotation_degrees(degrees : Degrees)
       setup_rotation_degrees(degrees, 0, NONE)
 
-    method setup_scale(Real64 start_factor, Real64 end_factor):
+    method setup_scale(start_factor : Real64, end_factor : Real64)
       setup_scale(start_factor, end_factor, LINEAR)
 
-    method setup_scale(Real64 scale_factor):
+    method setup_scale(scale_factor : Real64)
       setup_scale(scale_factor, 0, NONE)
 
-    method setup_position(Vector2 start_pos, Vector2 end_pos):
+    method setup_position(start_pos : Vector2, end_pos : Vector2)
       setup_position(start_pos, end_pos, LINEAR)
 
-    method setup_position_relative(Vector2 start_pos, Vector2 end_offset):
+    method setup_position_relative(start_pos : Vector2, end_offset : Vector2)
       setup_position(start_pos, start_pos + end_offset)
 
-    method setup_position(Vector2 pos):
+    method setup_position(pos : Vector2)
       setup_position(pos, Vector2(0,0), NONE)
 
   # ------------------------------------------------------------------------
 
-    method getP.Real64:
-      if(cyclical) return (((clock.elapsed_ms - start_time) / duration_ms).wrapped(0, 1)).(Real64)
-      local Real64 p = (clock.elapsed_ms - start_time) / duration_ms
-      if(p < 0) p = 0
+    method getP->Real64
+      if (cyclical) return (((clock.elapsed_ms - start_time) / duration_ms).wrapped(0, 1)).(Real64)
+      local p = (clock.elapsed_ms - start_time) / duration_ms : Real64
+      if (p < 0) p = 0
       return p
 
-    method interpolate(Int32 switch, Real64 p).Real64:
+    method interpolate(switch : Int32, p : Real64)->Real64
       which(meth[switch])
         case NONE:
           return values[switch][0]
         case LINEAR:
           return(values[switch][1] - values[switch][0]) * p + values[switch][0]
         case SIN:
-          local Real64 v = sinr(p * pi / 2)
+          local v = sinr(p * pi / 2) : Real64
           return(values[switch][1] - values[switch][0]) * v + values[switch][0]
         case SIN_SHARP:
-          local Real64 v = 1 + sinr(p * pi / 2 + 3 * pi / 2)
+          local v = 1 + sinr(p * pi / 2 + 3 * pi / 2) : Real64
           return(values[switch][1] - values[switch][0]) * v + values[switch][0]
         case OSCILLATE_LINEAR:
-          local Real64 v = p * 2
-          if(v > 1) v = 1 - (v - 1)
+          local v = p * 2 : Real64
+          if (v > 1) v = 1 - (v - 1)
           return(values[switch][1] - values[switch][0]) * v + values[switch][0]
         case OSCILLATE_SIN:
-          local Real64 v = sinr(p * pi)
+          local v = sinr(p * pi) : Real64
           return(values[switch][1] - values[switch][0]) * v + values[switch][0]
         case OSCILLATE_SIN_SHARP:
-          local Real64 v = 1 - abs(sinr(p * pi + pi / 2))
+          local v = 1 - abs(sinr(p * pi + pi / 2)) : Real64
           return(values[switch][1] - values[switch][0]) * v + values[switch][0]
         others:
           println("Bad interpolation method")
           return values[switch][0]
       endWhich
 
-    method draw.Logical:
-      local Real64 p
+    method draw->Logical
+      local p : Real64
 
-      if(stopped)
-        if(!persist) return false
+      if (stopped)
+        if (!persist) return false
         p = 1
       else
         p = getP
-        if(p > 1)
+        if (p > 1)
           die
           # die() might have reset() things, so check again...
           p = getP
-          if(p > 1)
+          if (p > 1)
             stop
             return draw
           endIf
         endIf
       endIf
 
-      local Real64 rotation = interpolate(ANGLE, p)
-      local Real64 opacity = interpolate(OPACITY, p)
-      local Vector2 coord = Vector2(interpolate(XCOORD, p), interpolate(YCOORD, p))
-      local Real64 scale = interpolate(SCALE, p)
+      local rotation = interpolate(ANGLE, p) : Real64
+      local opacity = interpolate(OPACITY, p) : Real64
+      local coord = Vector2(interpolate(XCOORD, p), interpolate(YCOORD, p))
+      local scale = interpolate(SCALE, p) : Real64
 
-      local Real64 t = ((clock.elapsed_ms - start_time) / 1000.0)
+      local t = ((clock.elapsed_ms - start_time) / 1000.0) : Real64
       # t is now how many seconds have elapsed.
 
       coord += drift_direction * t
@@ -2122,17 +2122,18 @@ class SimpleSpriteAnimation : Drawable, Updatable
 
       return true
 
-    method reset:
+    method reset
       clock.restart
       stopped = false
 
-    method die:
+    method die
       # Can be overridden
       # Never called if animation is cyclical
 endClass
 
+#{
 singleton class IPhone
- method orient( Int32 dir ): native
+ method orient(dir : Int32): native
    # 0=up-side-up, 1=right-side-up, 2=down, 3=left
 endClass
-
+}#
