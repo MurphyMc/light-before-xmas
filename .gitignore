@@ -1,5 +1,7 @@
 BuildLocal.rogue
 
+.*
+
 # Vim
 *.swp
 *.local
