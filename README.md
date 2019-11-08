@@ -1,58 +1,43 @@
-# Plasmacore
+# The Light Before Christmas
 
-About     | &nbsp;
-----------|-----------------------
-Version   | v0.9.14
-Date      | October 27, 2019
-Platforms | macOS, Linux
-Targets   | macOS, iOS, Linux, Web
+The Light Before Christmas is a simple puzzle game inspired by several similar games available on the web.  This version originated as an app for the original iPad written by Murphy McCauley in 2010, though it was never widely released.  In 2019, Murphy and Abe Pralle updated it.
+
+The Light Before Christmas is written in the Rogue programming language (originally using Rogue's predecessor, Slag) using the Plasmacore game programming framework.  Both Rogue and Plasmacore are open source software under the MIT license, and they are available on GitHub.
 
 
-## Requirements
-- The Rogue language must be installed separately from:
-    - [https://github.com/AbePralle/Rogue](https://github.com/AbePralle/Rogue)
-- macOS & iOS targets require Xcode.
+# How To Play
 
-### Compile Target Support
-Host Platform | macOS   | Linux  | iOS    | Web
---------------|---------|--------|--------|----
-macOS         | &#10004;|        |&#10004;|&#10004;
-Linux         |         |&#10004;|        |&#10004;
+The point of the game is to light up every bulb on the Christmas tree.
+
+Electricity starts at the base of the tree, and flows through connected wire segments.  It is possible to rotate the wire segments and bulbs such that every bulb and wire segment is energized, and every wire segment leads to either a bulb or another wire segment (that is, there are no "loose" wire segments which go nowhere and spark).  See how quickly you can reach that state from the randomized start state!
+
+Clicking on wires or bulbs will rotate them.  If you have a touch screen you can also "flick" them in either direction.
 
 
-## Bootstrap Command
+# Music
 
-To bootstrap a new Plasmacore-based project, install Rogue, open a Terminal in your new project folder, and copy and paste the following command:
+The music is all by Kevin MacLeod and is available under Creative Commons licenses.
 
-    curl -O https://raw.githubusercontent.com/AbePralle/Plasmacore/master/Bootstrap.rogue && rogo --build=Bootstrap
+"Dance of the Sugar Plum Fairies" \
+Kevin MacLeod (incompetech.com) \
+Source: [incompetech.com](https://incompetech.com/music/royalty-free/music.html) \
+Licensed under Creative Commons: By Attribution 4.0 License \
+https://creativecommons.org/licenses/by/4.0/
 
-The command will fetch a bootstrap build file which in turn will `git clone` the latest Plasmacore repo in a temporary folder and copy all the files into the current folder.
+"Jingle Bells (Calm)" \
+Kevin MacLeod (incompetech.com) \
+Source: [incompetech.com](https://incompetech.com/music/royalty-free/music.html) \
+Licensed under Creative Commons: By Attribution 4.0 License \
+https://creativecommons.org/licenses/by/4.0/
 
+"Oh Christmas Tree" \
+Kevin MacLeod (incompetech.com) \
+Source: [wikimedia.org](https://commons.wikimedia.org/wiki/File:Oh_Christmas_Tree.ogg) \
+Licensed under Creative Commons: By Attribution 2.0 License \
+https://creativecommons.org/licenses/by/2.0/
 
-## Documentation and Resources
-
-There is some Rogue documentation here: [https://github.com/AbePralle/Rogue/wiki](https://github.com/AbePralle/Rogue/wiki)
-
-There is no Plasmacore documentation yet.  You can manually browse the `Libraries/Rogue/Plasmacore` files.
-
-A sample Plasmacore game project is available here: [https://github.com/AbePralle/PlasmacoreDemos](https://github.com/AbePralle/PlasmacoreDemos)
-
-
-## Starting a New Project
-
-1.  Run the bootstrap command or manually clone the Plasmacore repo and copy everything except the `.git` folder into your project folder.
-2.  At the command line run e.g. `rogo ios`.  The first build will take a while as intermediate files are compiled.
-3.  Open `Platforms/iOS/iOS-Project.xcodeproj` in Xcode and run on the simulator or a device.  You should see a blue screen.
-4.  Edit `Source/Main.rogue` and add more game code.
-5.  Either run `rogo ios` again or just compile and run in Xcode again as a build phase automatically runs `rogo ios`.  If you get an error in Xcode and you can't tell what it is, run `rogo ios` on the command line and you will see the compiler error message.
-6.  Add images to Assets/Images and load them by name - `Image("img.png")`, `Font("SomeFont.png")`, etc.
-
-
-## Updating an Existing Project
-
-`rogo update` will update your current project to the latest version of Plasmacore (via `git`) without touching any game-specific files.
-
-
-## License
-Plasmacore is released under the terms of the [MIT License](https://en.wikipedia.org/wiki/MIT_License).
-
+"Silent Night" \
+Kevin MacLeod (incompetech.com) \
+Source: [incompetech.com](https://incompetech.com/music/royalty-free/music.html) \
+Licensed under Creative Commons: By Attribution 4.0 License \
+https://creativecommons.org/licenses/by/4.0
