@@ -17,6 +17,7 @@
 #     - mp3 is good for iOS and Mac music
 
 [Default]
+@ **.wav format:ima4
 include **
 
 [iOS]
