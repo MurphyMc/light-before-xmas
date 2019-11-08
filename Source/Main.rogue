@@ -1,8 +1,36 @@
+uses Plasmacore
+
+#Display( "Main" ).screen = Launch
+Display( "Main" ).screen = TestScreen()
+
 #TODO: put dead check stuff in MyScreen
 
-deferred singleton class Launch : Screen
+class TestScreen : Screen
+  PROPERTIES
+    sounds = [ SFX.swish1, SFX.tambourine, SFX.swish2, SFX.click1, SFX.jingle ] : SoundEffect[]
+
+  METHODS
+    method on_start
+      Music.tick
+      local ssa :  SimpleSpriteAnimation
+
+    method on_draw
+      Display.clear( Color.BLUE )
+
+    method on( e:PointerEvent )
+      if (e.is_press)
+        sounds.add( sounds.remove_first )
+        sounds.last.play
+      endIf
+
+endClass
+
+
+#{
+class Launch : Screen [singleton]
   PROPERTIES
     ticks = 30 : Int32
+
   METHODS
     method init
       #Display.scale_to_fit(1024,768)
@@ -14,11 +42,11 @@ deferred singleton class Launch : Screen
     method update
       ticks--
       if (ticks < 0)
-        replace_with(MainMenu, Screen.fade_between)
+        change_screen( MainMenu, 0.5 )
       endIf
 endClass
 
-deferred singleton class CreditsMenu : BaseMenuScreen
+class CreditsMenu : BaseMenuScreen [singleton]
   METHODS
     method init
       menu = Menu(Box(Corners(0,180,Display.size.x,Display.size.y - 40)))
@@ -46,11 +74,11 @@ class BaseMenuScreen : Screen, MyScreen, MenuHost
 
   METHODS
     method on_resume
-      menu.current_offset = Vector2.zero
+      menu.current_offset = XY.zero
       menu.fly_in_right
 
     method on_activate
-      menu.current_offset = Vector2.zero
+      menu.current_offset = XY.zero
       menu.fly_in_right
 
     method update
@@ -94,16 +122,16 @@ class BaseMenuScreen : Screen, MyScreen, MenuHost
       menu.on(e)
 endClass
 
-deferred singleton class MainMenu : Screen, MenuHost, MyScreen
+class MainMenu : Screen, MenuHost, MyScreen [singleton]
   PROPERTIES
     menu : Menu
     action : Object
     countdown : Int32
-    #xform = Transform.identity : Transform #create_from(Radians(pi), Vector2(1,1), Vector2(1023,767)) : Transform
+    #xform = Transform.identity : Transform #create_from(Radians(pi), XY(1,1), XY(1023,767)) : Transform
   METHODS
     method init
-      #menu = Menu(Box(Vector2(Display.size.x/2,450),Vector2(0,748-450)))
-      menu = Menu(Box(Vector2(Display.size.x/2,160),Vector2(0,748-160-20)))
+      #menu = Menu(Box(XY(Display.size.x/2,450),XY(0,748-450)))
+      menu = Menu(Box(XY(Display.size.x/2,160),XY(0,748-160-20)))
       menu.target = this
       menu.add(MenuImage("main_title.png"))
       menu.add(MenuSpacer(40))
@@ -115,11 +143,11 @@ deferred singleton class MainMenu : Screen, MenuHost, MyScreen
       Music
 
     method on_resume
-      menu.current_offset = Vector2.zero
+      menu.current_offset = XY.zero
       menu.fly_in_right
 
     method on_activate
-      menu.current_offset = Vector2.zero
+      menu.current_offset = XY.zero
       menu.fly_in_right
 
     method update
@@ -131,11 +159,11 @@ deferred singleton class MainMenu : Screen, MenuHost, MyScreen
       local identifier = action
       action = null
       if (identifier == "Start")
-        replace_with(TreeGame, Screen.fade_between)
+        change_screen( TreeGame, 0.5 )
       elseIf (identifier == "Options")
-        push(OptionsMenu)
+        push_state(OptionsMenu)
       elseIf (identifier == "Credits")
-        push(CreditsMenu)
+        push_state(CreditsMenu)
       endIf
     method draw
       TreeGame.bg.draw
@@ -149,7 +177,7 @@ deferred singleton class MainMenu : Screen, MenuHost, MyScreen
       menu.on(e)
 endClass
 
-deferred singleton class ScreenManager
+class ScreenManager [singleton]
   PROPERTIES
     flipped = false : Logical
     xform = Transform.identity : Transform
@@ -160,12 +188,14 @@ deferred singleton class ScreenManager
     flip_time : Int64
   METHODS
     method init
+#{ ABE
 [if defined(IPHONE)]
-      xform = Transform.create_from(Radians(pi), Vector2(1,1), Display.size - Vector2(1,1))#Vector2(1023,767))
+      xform = Transform.create_from(Radians(pi), XY(1,1), Display.size - XY(1,1))#XY(1023,767))
       flipped = true
       Input.flip = true
       IPhone.orient = 3
 [endIf]
+}#
     method flip (v : Logical)
       if (v == flipped) return
 
@@ -174,17 +204,19 @@ deferred singleton class ScreenManager
       flipping = true
       #{
       if (v)
-        xform = Transform.create_from(Radians(pi), Vector2(1,1), Vector2(1023,767))
+        xform = Transform.create_from(Radians(pi), XY(1,1), XY(1023,767))
       else
         xform = Transform.identity
       endIf
       }#
 
+      #{ ABE
       if (v)
         IPhone.orient = 3
       else
         IPhone.orient = 1
       endIf
+      }#
 
       flipped = v
     method update
@@ -196,23 +228,23 @@ deferred singleton class ScreenManager
       endIf
       if (not flipped)
         Transform.translate(Display.size * .5).push_camera_transform
-        xform = Transform.create_from(Radians(-pi * (1 - p)), Vector2(1,1), Vector2(0,0))
+        xform = Transform.create_from(Radians(-pi * (1 - p)), XY(1,1), XY(0,0))
         xform.push_camera_transform
         Transform.translate(Display.size * -.5).push_camera_transform
       else
         Transform.translate(Display.size * .5).push_camera_transform
-        xform = Transform.create_from(Radians(pi * -p), Vector2(1,1), Vector2(0,0))#1023,767))
+        xform = Transform.create_from(Radians(pi * -p), XY(1,1), XY(0,0))#1023,767))
         xform.push_camera_transform
         Transform.translate(Display.size * -.5).push_camera_transform
         if (p == 1)
-          xform = Transform.create_from(Radians(pi * p), Vector2(1,1), Display.size - Vector2(1,1))
+          xform = Transform.create_from(Radians(pi * p), XY(1,1), Display.size - XY(1,1))
         endIf
       endIf
 endClass
 
-overlaying aspect MyScreen
+class MyScreen [aspect]
   METHODS
-
+    #{
     method on (event : AccelerationEvent)
       #println(event.to_String + " " + event.orientation.to_String)
       local o = sign(event.x) : Int32
@@ -231,7 +263,9 @@ overlaying aspect MyScreen
       endIf
 
       insertUnderlying
+    }#
 
+    #{
     method draw
       if (ScreenManager.flipping)
         ScreenManager.update
@@ -249,7 +283,8 @@ overlaying aspect MyScreen
         b = Box(0,Display.size.y,Display.size.x,300)
         b.fill(Color.black)
       endIf
-endAspect
+      }#
+endClass
 
 deferred singleton class OptionsMenu : Screen, MenuHost, MyScreen
   PROPERTIES
@@ -258,7 +293,7 @@ deferred singleton class OptionsMenu : Screen, MenuHost, MyScreen
     countdown : Int32
   METHODS
     method init
-      menu = Menu(Box(Corners(0,180,Display.size.x,Display.size.y - 40))) # Vector2(Display.size.x/2,500),Vector2(0,748-500)))
+      menu = Menu(Box(Corners(0,180,Display.size.x,Display.size.y - 40))) # XY(Display.size.x/2,500),XY(0,748-500)))
       menu.target = this
       menu.add(MenuImage("title_options.png"))
       menu.add(MenuSpacer(40))
@@ -268,7 +303,7 @@ deferred singleton class OptionsMenu : Screen, MenuHost, MyScreen
       menu.add(MenuButton("Go Back"))
       menu.add(MenuSpacer(60))
     method on_activate
-      menu.current_offset = Vector2.zero
+      menu.current_offset = XY.zero
       menu.fly_in_right
     method update
       Music.tick
@@ -319,7 +354,7 @@ deferred singleton class PauseMenu : Screen, MenuHost, MyScreen
     countdown : Int32
   METHODS
     method init
-      #menu = Menu(Box(Vector2(Display.size.x/2,350),Vector2(0,748-350)))
+      #menu = Menu(Box(XY(Display.size.x/2,350),XY(0,748-350)))
       menu = Menu(Box(Corners(0,180,Display.size.x,Display.size.y - 40)))
       menu.target = this
       menu.add(MenuImage("title_paused.png"))
@@ -331,7 +366,7 @@ deferred singleton class PauseMenu : Screen, MenuHost, MyScreen
       menu.add(MenuButton("Turn Music Off"))
       menu.add(MenuButton("Turn Sound Off"))
     method on_activate
-      menu.current_offset = Vector2.zero
+      menu.current_offset = XY.zero
       menu.fly_in_bottom
     method update
       Music.tick
@@ -377,27 +412,26 @@ deferred singleton class PauseMenu : Screen, MenuHost, MyScreen
       menu.on(e)
 endClass
 
-abstract class MenuItem
-  PROPERTIES
+class MenuItem [abstract]
   METHODS
     method on_in
     method on_out
     method on_down
     method on_up
-    method draw (position : Vector2)
+    method draw (position : XY)
     method update
-    method size->Vector2
-      return Vector2(0,0)
+    method size->XY
+      return XY(0,0)
     method hitbox->Box
       return Box(0,0,0,0)
     method identifier->Object
       return this
 endClass
 
-aspect MenuHost
+class MenuHost [aspect]
   METHODS
     method menu_selected (entry : MenuEntry, identifier : Object)
-endAspect
+endClass
 
 class MenuImage : MenuItem
   PROPERTIES
@@ -406,20 +440,20 @@ class MenuImage : MenuItem
     method init (img)
     method init (filename : String)
       img = Image(filename)
-    method draw (position : Vector2)
+    method draw (position : XY)
       img.draw(position)
-    method size->Vector2
+    method size->XY
       return img.size
 endClass
 
 class MenuSpacer : MenuItem
   PROPERTIES
-    _size : Vector2
+    _size : XY
   METHODS
     method init (_size)
     method init (s : Int32)
-      _size = Vector2(s, s)
-    method size->Vector2
+      _size = XY(s, s)
+    method size->XY
       return _size
 endClass
 
@@ -439,17 +473,17 @@ class MenuButton : MenuItem
     method identifier->Object
       return text
 
-    method size->Vector2
+    method size->XY
       return MenuManager.img_button.size
 
     method hitbox->Box
-      return Box(Vector2(0,0), MenuManager.img_button.size).cropped(3)
+      return Box(XY(0,0), MenuManager.img_button.size).cropped(3)
 
     method init (text)
       cur_scale = NORMAL
       target_scale = NORMAL
 
-    method draw (position : Vector2)
+    method draw (position : XY)
       #MenuManager.img_button.handle = Handle.center
       local size = this.size
       MenuManager.img_button.scale = cur_scale
@@ -460,7 +494,7 @@ class MenuButton : MenuItem
       MenuManager.img_button.draw(position)
       MenuManager.font.scale = cur_scale
       MenuManager.font.color = Color.black
-      MenuManager.font.draw(text, position + size / 2 + Vector2(2,2))
+      MenuManager.font.draw(text, position + size / 2 + XY(2,2))
       MenuManager.font.color = Color.white
       MenuManager.font.draw(text, position + size / 2)
       MenuManager.img_button.scale = 1
@@ -504,23 +538,21 @@ class MenuButton : MenuItem
       locked = true
 endClass
 
-class MenuEntry (item)
+class MenuEntry(item:MenuItem)
   PROPERTIES
-    item : MenuItem
-    position : Vector2
-  METHODS
+    position : XY
 endClass
 
 singleton deferred class MenuManager
   PROPERTIES
     img_button("button_blank.png") : Image
     font("font_Book Antiqua_37_bold.png") : Font
-    select("sounds/sfx_tick.wav", 1) : SoundEffect
-    highlight("sounds/sfx_tock.wav", 3) : SoundEffect
+    on_select("sfx_tick", 1) : SoundEffect
+    highlight("sfx_tock", 3) : SoundEffect
 
   METHODS
     method init
-      font.handle = Handle(Vector2(0, -3), Handle.center)
+      font.handle = Anchor(XY(0, -3), Handle.center)
       font.adjust_character_widths(-6)
 endClass
 
@@ -535,29 +567,29 @@ class Menu
 
     target : MenuHost
 
-    current_offset = Vector2.zero : Vector2
-    target_offset = Vector2.zero : Vector2
+    current_offset = XY.zero : XY
+    target_offset = XY.zero : XY
 
     _dirty = true : Logical
     _current : MenuEntry
 
   METHODS
     method fly_out_left
-      target_offset = Display.size * Vector2(-1, 0)
+      target_offset = Display.size * XY(-1, 0)
 
     method fly_out_bottom
-      target_offset = Display.size * Vector2(0, 1)
+      target_offset = Display.size * XY(0, 1)
 
     method fly_in_right
       target_offset = current_offset
-      current_offset = Display.size * Vector2(1, 0)
+      current_offset = Display.size * XY(1, 0)
 
     method fly_in_bottom
       target_offset = current_offset
-      current_offset = Display.size * Vector2(0, 1)
+      current_offset = Display.size * XY(0, 1)
 
     method init ()
-      box = Box(Vector2(0,0),Display.size).cropped(100)
+      box = Box(XY(0,0),Display.size).cropped(100)
 
     method init (box)
 
@@ -575,15 +607,15 @@ class Menu
       _dirty = true
       entries.add(MenuEntry(item))
 
-    method _getmaj (v : Vector2)->Real64
+    method _getmaj (v : XY)->Real64
       if (horizontal) return v.x
       return v.y
-    method _getmin (v : Vector2)->Real64
+    method _getmin (v : XY)->Real64
       if (horizontal) return v.y
       return v.x
-    method _vec (minor : Real64, major : Real64)->Vector2
-      if (horizontal) return Vector2(major, minor)
-      return Vector2(minor, major)
+    method _vec (minor : Real64, major : Real64)->XY
+      if (horizontal) return XY(major, minor)
+      return XY(minor, major)
 
     method refresh
       if (not _dirty) return
@@ -616,8 +648,8 @@ class Menu
 
     method update
       current_offset = current_offset * .8 + target_offset * .2
-      #if (current_offset.x < 5) current_offset = Vector2(0, current_offset.y)
-      #if (current_offset.y < 5) current_offset = Vector2(current_offset.x, 0)
+      #if (current_offset.x < 5) current_offset = XY(0, current_offset.y)
+      #if (current_offset.y < 5) current_offset = XY(current_offset.x, 0)
 
       refresh
       forEach (entry in entries)
@@ -652,7 +684,7 @@ class Menu
           if (_current?)
             _current.item.on_up
             if (target?) target.menu_selected(_current, _current.item.identifier)
-            MenuManager.select.play
+            MenuManager.on_select.play
             _current = null
           endIf
         case MouseEvent.movement:
@@ -676,8 +708,8 @@ class Menu
       endForEach
       return null
 
-      #method current_offset->Vector2
-      #  return Vector2.zero
+      #method current_offset->XY
+      #  return XY.zero
 
     method draw
       refresh
@@ -714,32 +746,32 @@ class Menu
       }#
 endClass
 
-deferred singleton class TreeGame : Screen, MyScreen
+singleton class TreeGame : Screen, MyScreen [singleton]
   PROPERTIES
-    flake_button("flake_button.png") : Image
-    spark("twinkle.png") : Image
+    flake_button = Image("flake_button.png")
+    spark = Image("twinkle.png")
     tree : Tree
     ticks : Int32
-    bg("new_bg.jpg") : Image
-    treepic("new_tree_base.png") : Image
-    starpic("new_tree_star_glow_white_380.png") : Image
-    tree_sparkle_map("tree_sparkle_map.png") : Bitmap
-    star_sparkle_map("star_sparkle_map.png") : Bitmap
-    sparks() : MultiDrawable
-    tree_sparkles() : MultiDrawable
-    star_sparkles() : MultiDrawable
+    bg = Image("new_bg.jpg")
+    treepic = Image("new_tree_base.png")
+    starpic = Image("new_tree_star_glow_white_380.png")
+    tree_sparkle_map = Bitmap(File("tree_sparkle_map.png"))
+    star_sparkle_map = Bitmap(File("star_sparkle_map.png"))
+    sparks   = MultiDrawable()
+    tree_sparkles = MultiDrawable()
+    star_sparkles = MultiDrawable()
 
-    timer_font("font_Book Antiqua_37_bold.png") : Font
+    timer_font = Font("font_Book Antiqua_37_bold.png")
 
     last_button : Int32
-    last_position : Vector2
+    last_position : XY
 
     last_slow_timer : Int64
 
   METHODS
-    method random_on_map (map : Bitmap)->Vector2
+    method random_on_map (map : Bitmap)->XY
       while (true)
-        local p = Vector2(random_Int32(0, map.size.x), random_Int32(0, map.size.y))
+        local p = XY(Random.int32(0, map.size.x), Random.int32(0, map.size.y))
         local pixel = map.get(p.x, p.y).argb : Int32
         if ((pixel & 0xFFffFF) == 0)
           return p
@@ -748,12 +780,12 @@ deferred singleton class TreeGame : Screen, MyScreen
 
     method random_star_sparkle
       local p = random_on_map(star_sparkle_map)
-      TreeGame.spark.color = Color(HSV(.1666, random_Real64(0,1), 1))
+      TreeGame.spark.color = Color(HSV(.1666, Random.real64(0,1), 1))
 
       local s = SimpleSpriteAnimation(TreeGame.spark, 900)
 
-      local d = random_Real64(40, 90)
-      if (random_Real64 < .5) d *= -1
+      local d = Random.real64(40, 90)
+      if (Random.real64 < .5) d *= -1
       s.setup_rotation_degrees(Degrees(0), Degrees(d))
       s.setup_scale(0, 1.5, SimpleSpriteAnimation.OSCILLATE_SIN_SHARP)
       s.setup_fade(0, 1, SimpleSpriteAnimation.OSCILLATE_SIN)
@@ -764,7 +796,7 @@ deferred singleton class TreeGame : Screen, MyScreen
       star_sparkles.add(s)
 
     method random_sparkle
-      if (random_Real64 < .5)
+      if (Random.real64 < .5)
         random_star_sparkle
       else
         random_tree_sparkle
@@ -773,11 +805,11 @@ deferred singleton class TreeGame : Screen, MyScreen
 
     method random_tree_sparkle
       local p = random_on_map(tree_sparkle_map)
-      TreeGame.spark.color = Color(HSV(random_Real64, random_Real64(.5,.8), random_Real64(.8,1)))
+      TreeGame.spark.color = Color(HSV(Random.real64, Random.real64(.5,.8), Random.real64(.8,1)))
       local s = OverexposedSimpleSpriteAnimation(TreeGame.spark, 900)
 
-      local d = random_Real64(40, 90)
-      if (random_Real64 < .5) d *= -1
+      local d = Random.real64(40, 90)
+      if (Random.real64 < .5) d *= -1
       s.setup_rotation_degrees(Degrees(0), Degrees(d))
       s.setup_scale(0, 1.5, SimpleSpriteAnimation.OSCILLATE_SIN_SHARP)
       s.setup_fade(0, 1, SimpleSpriteAnimation.OSCILLATE_SIN)
@@ -789,10 +821,10 @@ deferred singleton class TreeGame : Screen, MyScreen
 
     method init
       spark.handle = Handle.center
-      spark.blend = Blend.overexpose
+      spark.render_mode = RenderMode.ADDITIVE_IMAGE
 
       timer_font.handle = Handle.top_right
-      timer_font.adjust_character_widths(-6)
+      timer_font.spacing = -1
       timer_font.make_numerals_monospace
 
       SFX # cache SFX
@@ -853,26 +885,26 @@ deferred singleton class TreeGame : Screen, MyScreen
       tree.draw
       tree.make_sparks
 if (tree.solved)
-  if (random_Real64 < .1) random_tree_sparkle
+  if (Random.real64 < .1) random_tree_sparkle
 else
-  if (random_Real64 < .001) random_tree_sparkle
+  if (Random.real64 < .001) random_tree_sparkle
 endIf
       tree_sparkles.draw
       sparks.draw
 
       SystemFont.handle = Handle.center
       if (tree.solved)
-if (random_Real64 < .04) random_star_sparkle
+        if (Random.real64 < .04) random_star_sparkle
         local p = (running_ms - tree.solved_ms) / 400.0 : Real64
         if (p > 1) p = 1
         starpic.color = Color(255,255,255,255*p)
-        starpic.draw(Vector2(380,0))
+        starpic.draw(XY(380,0))
         star_sparkles.draw
       endIf
       timer_font.handle = Handle.top_right
-      local pos = Display.size * Vector2(1, 0) + Vector2(-6, 1)
+      local pos = Display.size * XY(1, 0) + XY(-6, 1)
       timer_font.color = Color.black
-      timer_font.draw(tree.time_string, pos + Vector2(2,2))
+      timer_font.draw(tree.time_string, pos + XY(2,2))
       timer_font.color = Color.white
       timer_font.draw(tree.time_string, pos)
 
@@ -880,18 +912,18 @@ if (random_Real64 < .04) random_star_sparkle
       button.scale = 1
       button.angle = Radians(0)
       button.color = Color(0,0,0,192)
-      #button.draw(Vector2(42, 42))
-      button.draw(Vector2(7, 5))
+      #button.draw(XY(42, 42))
+      button.draw(XY(7, 5))
       button.color = Color.white
-      button.draw(Vector2(5, 3))
-      #button.draw(Vector2(40, 40))
+      button.draw(XY(5, 3))
+      #button.draw(XY(40, 40))
 
 
     method on(e : MouseEvent)
       which (e.type)
         case MouseEvent.button_press:
           if (e.position.x < 85 and e.position.y < 85)
-            MenuManager.select.play
+            MenuManager.on_select.play
             tree.pause
             push(PauseMenu, Screen.fade_between)
           endIf
@@ -982,25 +1014,27 @@ class LitSets
   METHODS
     method init
 endClass
+}#
 
 augment Global
   PROPERTIES
     time_offset : Int64
   METHODS
     method sinr (r : Real64)->Real64
-      return sin(Radians(r))
+      return Radians(r).sin
     method running_ms->Int64
-      return time_ms + time_offset
+      return Int64(System.time*1000) + time_offset
 endAugment
 
-singleton deferred class FlakeManager
+#{
+class FlakeManager [singleton]
   PROPERTIES
     num_flakes = 25 : Int32
     add_delay_min = 500 : Int32
     add_delay_max = 2500 : Int32
 
-    flakes() : Flake[]
-    images() : Image[]
+    flakes = Flake[]
+    images = Image[]
 
     next_add : Int64
   METHODS
@@ -1011,7 +1045,7 @@ singleton deferred class FlakeManager
       endForEach
 
       flakes.add(Flake())
-      next_add = running_ms + random_Int32(add_delay_min, add_delay_max)
+      next_add = running_ms + Random.int32(add_delay_min, add_delay_max)
 
     method draw
       forEach (i in 0..flakes.count-1)
@@ -1021,8 +1055,8 @@ singleton deferred class FlakeManager
 
         p += (flake.vel * t)
 
-        p += Vector2(sin(Radians(2 * pi * t / flake.sway_period + 2 * pi * flake.sway_offset)) * flake.sway_amount, 0)
-        p += Vector2(sin(Radians(2 * pi * t / flake.sway_period2 + 2 * pi * flake.sway_offset2)) * flake.sway_amount2, 0)
+        p += XY(sin(Radians(2 * pi * t / flake.sway_period + 2 * pi * flake.sway_offset)) * flake.sway_amount, 0)
+        p += XY(sin(Radians(2 * pi * t / flake.sway_period2 + 2 * pi * flake.sway_offset2)) * flake.sway_amount2, 0)
 
         flake.image.scale = flake.size
         flake.image.color = flake.color
@@ -1036,7 +1070,7 @@ singleton deferred class FlakeManager
 
       if (flakes.count < num_flakes)
         if (next_add <= running_ms)
-          next_add = running_ms + random_Int32(add_delay_min, add_delay_max)
+          next_add = running_ms + Random.int32(add_delay_min, add_delay_max)
           flakes.add(Flake())
         endIf
       endIf
@@ -1045,26 +1079,26 @@ endClass
 class Flake
   PROPERTIES
     rotation : Degrees
-    pos(random_Int32(-400, Display.size.x), -150) : Vector2
-    size = random_Real64(.5, 1) : Real64
+    pos = XY(Random.int32(-400, Display.size.x), -150)
+    size = Random.real64(.5, 1) : Real64
     image = FlakeManager.images.random() : Image
-    vel(random_Real64(5, 15), random_Real64(10, 25)) : Vector2
-    color(255,255,255,random_Real64(.7,1) * 255) : Color
+    vel = XY(Random.real64(5, 15), Random.real64(10, 25))
+    color = Color(255,255,255,Random.real64(.7,1) * 255)
     start_ms = running_ms : Int64
 
-    sway_amount = random_Real64(5, 15) : Real64
-    sway_period = random_Real64(4, 6) : Real64
-    sway_offset = random_Real64(0, .25) : Real64
+    sway_amount = Random.real64(5, 15) : Real64
+    sway_period = Random.real64(4, 6) : Real64
+    sway_offset = Random.real64(0, .25) : Real64
 
-    sway_amount2 = random_Real64(5, 10) : Real64
-    sway_period2 = random_Real64(6, 12) : Real64
-    sway_offset2 = random_Real64(0, .5) : Real64
+    sway_amount2 = Random.real64(5, 10) : Real64
+    sway_period2 = Random.real64(6, 12) : Real64
+    sway_offset2 = Random.real64(0, .5) : Real64
   METHODS
     method t->Real64
       return (running_ms - start_ms) / 1000.0
     method init
       while (abs(rotation.value) < 8)
-        rotation = Degrees(random_Real64(-10, 25))
+        rotation = Degrees(Random.real64(-10, 25))
       endWhile
 
 endClass
@@ -1072,7 +1106,7 @@ endClass
 class Tree
   PROPERTIES
     solved = false : Logical
-    draw_pos(70-23,110+80) : Vector2
+    draw_pos(70-23,110+80) : XY
     width : Int32 # max width
     source : Tile
     num_pieces : Int32 # number of lightable pieces
@@ -1189,7 +1223,7 @@ class Tree
         endIf
       endWhile
 
-    method click (pos : Vector2, alternate : Logical)
+    method click (pos : XY, alternate : Logical)
       if (solved) return
       pos = pos - draw_pos
       local x = pos.x + TileImages.imgs[0].size.x / 2 : Int32
@@ -1312,10 +1346,10 @@ class Tile
     cur_rot : Real64
     rot_amount : Real64
 
-    hue = random_Real64 : Real64
-    sat1 = random_Real64(.9,1) : Real64
-    sat2 = random_Real64(.9,1) : Real64
-    hue_var = random_Real64(0,.1) : Real64
+    hue = Random.real64 : Real64
+    sat1 = Random.real64(.9,1) : Real64
+    sat2 = Random.real64(.9,1) : Real64
+    hue_var = Random.real64(0,.1) : Real64
 
     spark_dirs : Int32
   METHODS
@@ -1477,10 +1511,10 @@ class Tile
       img.draw(x * sx + tree.draw_pos.x, y * sy + tree.draw_pos.y)
       if  (index == 0 and this != tree.source)
         TileImages.bulb.color = Color(HSV(hue, sat1, .25 + .75 * cur_lit))
-        TileImages.bulb.blend = Blend.normal
+        TileImages.bulb.render_mode = RenderMode.ALPHA_IMAGE
         TileImages.bulb.draw(x * sx + tree.draw_pos.x, y * sy + tree.draw_pos.y)
         TileImages.bulb.color = Color(HSV(hue+hue_var, sat2, .5 * cur_lit))
-        TileImages.bulb.blend = Blend.overexpose
+        TileImages.bulb.render_mode = RenderMode.ADDITIVE_IMAGE
         TileImages.bulb.draw(x * sx + tree.draw_pos.x, y * sy + tree.draw_pos.y)
       endIf
 
@@ -1503,41 +1537,41 @@ class Tile
       endWhile
 
     method spark (d : Int32)
-      if (random_Real64 < 0.96) return
+      if (Random.real64 < 0.96) return
 
-      local p = Vector2(0, 0)
-      local o = Vector2(0, 0)
+      local p = XY(0, 0)
+      local o = XY(0, 0)
       which (d)
         case 1:
-          p = Vector2(0, -1)
-          o = Vector2(1, 0)
+          p = XY(0, -1)
+          o = XY(1, 0)
         case 2:
-          p = Vector2(1, 0)
-          o = Vector2(0, 1)
+          p = XY(1, 0)
+          o = XY(0, 1)
         case 4:
-          p = Vector2(0, 1)
-          o = Vector2(1, 0)
+          p = XY(0, 1)
+          o = XY(1, 0)
         case 8:
-          p = Vector2(-1, 0)
-          o = Vector2(0, 1)
+          p = XY(-1, 0)
+          o = XY(0, 1)
       endWhich
       local v = p
       p *= (TileImages.imgs[0].size * .5)
-      local shift = random_Real64(-6,6)
+      local shift = Random.real64(-6,6)
       p += o * shift
 
       local dir = -1 : Real64
       if (shift > 0) dir = -dir
       if (d == 4 or d == 8) dir = -dir
 
-      p += Vector2(x, y) * TileImages.imgs[0].size + tree.draw_pos
+      p += XY(x, y) * TileImages.imgs[0].size + tree.draw_pos
 
       TreeGame.spark.color = Color(255, 255, 0)
       local s = SimpleSpriteAnimation(TreeGame.spark, 150)
 
-      v = v.rotated(Degrees(random_Real64(0,45)*dir)) * TileImages.imgs[0].size * 0.25
+      v = v.rotated(Degrees(Random.real64(0,45)*dir)) * TileImages.imgs[0].size * 0.25
       s.setup_position_relative(p, v)
-      s.setup_rotation_degrees(Degrees(0), Degrees(random_Real64(-10,10)))
+      s.setup_rotation_degrees(Degrees(0), Degrees(Random.real64(-10,10)))
       s.setup_scale(1, 0.6)
       s.setup_fade(cur_lit, 0)
 
@@ -1617,7 +1651,7 @@ class Tile
 
 endClass
 
-singleton class TileImages
+class TileImages [singleton]
   PROPERTIES
     imgs() : Image[]
     bulb : Image
@@ -1637,15 +1671,16 @@ singleton class TileImages
       add_img("15.png")
 
 endClass
+}#
 
-singleton deferred class Music
+class Music [singleton]
   PROPERTIES
-    #path = "./sounds/music" : String
+    #path = "./music" : String
     volume : Real64
     paused = false: Logical
 
-    tracks() : Sound[]
-    names() : String[]
+    tracks = Sound[]
+    names  = String[]
     index = -1 : Int32
     real_volume : Real64
     is_paused = true: Logical
@@ -1655,33 +1690,33 @@ singleton deferred class Music
       #local File dir = File(".")
       #dir = File(dir.absolute_filepath, "sounds")
       #dir = File(dir.absolute_filepath, "music")
-      local files = {
-        "dance-of-the-sugar-plum-faries.mp3",
-        "jingle-bells-slow-mix.mp3",
-        "oh-christmas-tree.mp3",
-        "silent-night.mp3"}
+      local files = [
+        "music/dance-of-the-sugar-plum-faries.mp3",
+        "music/jingle-bells-slow-mix.mp3",
+        "music/oh-christmas-tree.mp3",
+        "music/silent-night.mp3" ] : String[]
 
       forEach (entry in files) #dir.directory_listing)
-        #tracks.add(Sound("sounds/music/" + entry))
+        #tracks.add(Sound("music/" + entry))
         tracks.add(Sound(entry))
-        local words = entry.replace("-", " ").before_last('.').split(' ')
-        local StringBuilder n()
+        local words = entry.replacing("-", " ").before_last('.').split(' ')
+        local n = StringBuilder()
         forEach (word in words)
           n.print(word.capitalized)
           n.print(" ")
         endForEach
-        names.add(n.to_String.trim)
+        names.add(n.to_String.trimmed)
       endForEach
 
-      local order = ArrayList<<Int32>>(0..(tracks.count - 1))
+      local order = (0..(tracks.count - 1))->Int32[]
       order.shuffle
       forEach (o in order)
         names.add(names[o])
         tracks.add(tracks[o])
       endForEach
       forEach (o in order)
-        names.remove(0)
-        tracks.remove(0)
+        names.remove_at(0)
+        tracks.remove_at(0)
       endForEach
 
     method toggle_pause
@@ -1737,48 +1772,38 @@ singleton deferred class Music
 
 endClass
 
-singleton deferred class SFX
+class SFX [singleton]
   PROPERTIES
     enabled = true : Logical
-    swish1("sounds/sfx_swish1.wav", 5) : SoundEffect
-    tambourine("sounds/sfx_tambourine.wav", 5) : SoundEffect
-    swish2("sounds/sfx_swish2.wav", 5) : SoundEffect
-    click1("sounds/sfx_click1.wav", 5) : SoundEffect
-    jingle("sounds/sfx_jingle.wav", 1) : SoundEffect
-  METHODS
-
-
+    swish1     = SoundEffect("sfx_swish1", 5)
+    tambourine = SoundEffect("sfx_tambourine", 5)
+    swish2     = SoundEffect("sfx_swish2", 5)
+    click1     = SoundEffect("sfx_click1", 5)
+    jingle     = SoundEffect("sfx_jingle", 1)
 endClass
 
-class SoundEffect : Sound
+class SoundEffect : SoundGroup
   METHODS
-    method play
-      if (SFX.enabled) prior.play(true)
+    method play->SoundGroup
+      if (SFX.enabled) return prior.play
+      return this
 endClass
 
-
-
-
-underlying aspect Drawable
+class Drawable [aspect]
   METHODS
-    method draw.Logical: abstract
-endAspect
-
-underlying aspect Updatable
-  METHODS
-    method update.Logical: abstract
-endAspect
+    method draw->Logical [abstract]
+endClass
 
 class MultiDrawable : Drawable
   PROPERTIES
-    children : Drawable[]
+    children       : Drawable[]
     die_when_empty : Logical
 
-    _removed() : Drawable[]
-    _drawing = false : Logical
+    _removed = Drawable[]
+    _drawing = false
   METHODS
     method init ()
-      children = ArrayList<<Drawable>>()
+      children = Drawable[]
 
     method remove (d : Drawable)
       if (_drawing)
@@ -1786,7 +1811,7 @@ class MultiDrawable : Drawable
       else
         try
           children.remove_value(d)
-        catch (Exception e)
+        catch (e : Exception)
         endTry
       endIf
 
@@ -1794,21 +1819,19 @@ class MultiDrawable : Drawable
       children.add(d)
 
     method draw->Logical
-      local Int32[] removed = null
+      local removed : Int32[]
       _drawing = true
       local r = false : Logical
       forEach (i in 0..children.count-1)
         local d = children[i]
         try
           r = d.draw
-        catch (Exception e)
+        catch (e : Exception)
           println(e.to_String)
           r = false
         endTry
         if (r == false)
-          if (removed == null)
-            removed = ArrayList<<Int32>>()
-          endIf
+          ensure removed
           removed.add(i)
         endIf
       endForEach
@@ -1834,51 +1857,48 @@ endClass
 class OverexposedSimpleSpriteAnimation : SimpleSpriteAnimation
   METHODS
     method draw->Logical
-      image.blend = Blend.normal
+      image.render_mode = RenderMode.ALPHA_IMAGE
       prior.draw
-      image.blend = Blend.overexpose
+      image.render_mode = RenderMode.ADDITIVE_IMAGE  # 'overexpose'
       return prior.draw
-
 endClass
 
-class SimpleSpriteAnimation : Drawable, Updatable
-  CLASS_PROPERTIES
-
-    OPACITY = 0 : Int32
-    ANGLE = 1 : Int32
-    SCALE = 2 : Int32
-    XCOORD = 3 : Int32
-    YCOORD = 4 : Int32
-    NONE = 0 : Int32
-    LINEAR = 1 : Int32
-    SIN = 2 : Int32
-    SIN_SHARP = 3 : Int32
-    OSCILLATE_LINEAR = 4 : Int32
-    OSCILLATE_SIN = 5 : Int32
+class SimpleSpriteAnimation : Drawable
+  GLOBAL PROPERTIES
+    OPACITY             = 0 : Int32
+    ANGLE               = 1 : Int32
+    SCALE               = 2 : Int32
+    XCOORD              = 3 : Int32
+    YCOORD              = 4 : Int32
+    NONE                = 0 : Int32
+    LINEAR              = 1 : Int32
+    SIN                 = 2 : Int32
+    SIN_SHARP           = 3 : Int32
+    OSCILLATE_LINEAR    = 4 : Int32
+    OSCILLATE_SIN       = 5 : Int32
     OSCILLATE_SIN_SHARP = 6 : Int32
 
   PROPERTIES
+    clock  = Stopwatch()
 
-    clock() : Stopwatch
+    values = Dim<<Real64>>( 5, 2 )
 
-    values=ArrayOf<<Real64>>[5,2] : Array<<Array<<Real64>>>>
-
-    meth=ListOf<<Real64>>[5] : Real64[]
+    meth   = Dim<<Real64>>( 5 )
 
     color : Color
 
     # Amount of gravity per second
-    gravity_direction(0,0) : Vector2
+    gravity_direction = XY(0,0)
 
     # Amount of drift per second
-    drift_direction(0,0) : Vector2
+    drift_direction = XY(0,0)
 
     duration_ms : Real64
     start_time : Real64
-    cyclical(false) : Logical
-    stopped(false) : Logical
+    cyclical = false
+    stopped = false
 
-    persist(false) : Logical # What to do when stopped / finished
+    persist = false # What to do when stopped / finished
 
     image : Image
 
@@ -1925,9 +1945,9 @@ class SimpleSpriteAnimation : Drawable, Updatable
       persist = false
 
     method init(image, duration_ms)
-      init(image,duration_ms,Vector2(0,0))
+      init(image,duration_ms,XY(0,0))
 
-    method init(image, duration_ms, coord : Vector2)
+    method init(image, duration_ms, coord : XY)
 
       reset
 
@@ -1936,7 +1956,7 @@ class SimpleSpriteAnimation : Drawable, Updatable
       values[XCOORD][0] = coord.x
       values[YCOORD][0] = coord.y
 
-      color = image.color
+      color = image.colors.a
 
     method stop
       stopped = true
@@ -1982,18 +2002,18 @@ class SimpleSpriteAnimation : Drawable, Updatable
       if (p > 1) p = 1
       return interpolate(SCALE, p)
 
-    method get_start_position->Vector2
-      return Vector2(interpolate(XCOORD, 0), interpolate(YCOORD, 0))
+    method get_start_position->XY
+      return XY(interpolate(XCOORD, 0), interpolate(YCOORD, 0))
 
-    method get_stop_position->Vector2
-      return Vector2(interpolate(XCOORD, 1), interpolate(YCOORD, 1))
+    method get_stop_position->XY
+      return XY(interpolate(XCOORD, 1), interpolate(YCOORD, 1))
 
-    method get_position->Vector2
+    method get_position->XY
       local p = getP : Real64
       if (p > 1) p = 1
-      return Vector2(interpolate(XCOORD, p), interpolate(YCOORD, p))
+      return XY(interpolate(XCOORD, p), interpolate(YCOORD, p))
 
-    method setup_position(start_pos : Vector2, end_pos : Vector2, interpolation_type : Int32)
+    method setup_position(start_pos : XY, end_pos : XY, interpolation_type : Int32)
       values[XCOORD][0] = start_pos.x
       values[YCOORD][0] = start_pos.y
       values[XCOORD][1] = end_pos.x
@@ -2001,7 +2021,7 @@ class SimpleSpriteAnimation : Drawable, Updatable
       meth[XCOORD] = interpolation_type
       meth[YCOORD] = interpolation_type
 
-    method setup_position_relative(start_pos : Vector2, end_offset : Vector2, interpolation_type : Int32)
+    method setup_position_relative(start_pos : XY, end_offset : XY, interpolation_type : Int32)
       setup_position(start_pos, start_pos + end_offset, interpolation_type)
 
   # ------------------------------------------------------------------------
@@ -2031,7 +2051,7 @@ class SimpleSpriteAnimation : Drawable, Updatable
       setup_rotation(radians, Radians(0), NONE)
 
     method setup_rotation_degrees(degrees : Degrees)
-      setup_rotation_degrees(degrees, 0, NONE)
+      setup_rotation_degrees(degrees, Degrees(0), NONE)
 
     method setup_scale(start_factor : Real64, end_factor : Real64)
       setup_scale(start_factor, end_factor, LINEAR)
@@ -2039,19 +2059,19 @@ class SimpleSpriteAnimation : Drawable, Updatable
     method setup_scale(scale_factor : Real64)
       setup_scale(scale_factor, 0, NONE)
 
-    method setup_position(start_pos : Vector2, end_pos : Vector2)
+    method setup_position(start_pos : XY, end_pos : XY)
       setup_position(start_pos, end_pos, LINEAR)
 
-    method setup_position_relative(start_pos : Vector2, end_offset : Vector2)
+    method setup_position_relative(start_pos : XY, end_offset : XY)
       setup_position(start_pos, start_pos + end_offset)
 
-    method setup_position(pos : Vector2)
-      setup_position(pos, Vector2(0,0), NONE)
+    method setup_position(pos : XY)
+      setup_position(pos, XY(0,0), NONE)
 
   # ------------------------------------------------------------------------
 
     method getP->Real64
-      if (cyclical) return (((clock.elapsed_ms - start_time) / duration_ms).wrapped(0, 1)).(Real64)
+      if (cyclical) return (((clock.elapsed_ms - start_time) / duration_ms) % 1.0)->Real64
       local p = (clock.elapsed_ms - start_time) / duration_ms : Real64
       if (p < 0) p = 0
       return p
@@ -2076,7 +2096,7 @@ class SimpleSpriteAnimation : Drawable, Updatable
           local v = sinr(p * pi) : Real64
           return(values[switch][1] - values[switch][0]) * v + values[switch][0]
         case OSCILLATE_SIN_SHARP:
-          local v = 1 - abs(sinr(p * pi + pi / 2)) : Real64
+          local v = 1 - (sinr(p * pi + pi / 2)).abs : Real64
           return(values[switch][1] - values[switch][0]) * v + values[switch][0]
         others:
           println("Bad interpolation method")
@@ -2104,7 +2124,7 @@ class SimpleSpriteAnimation : Drawable, Updatable
 
       local rotation = interpolate(ANGLE, p) : Real64
       local opacity = interpolate(OPACITY, p) : Real64
-      local coord = Vector2(interpolate(XCOORD, p), interpolate(YCOORD, p))
+      local coord = XY(interpolate(XCOORD, p), interpolate(YCOORD, p))
       local scale = interpolate(SCALE, p) : Real64
 
       local t = ((clock.elapsed_ms - start_time) / 1000.0) : Real64
@@ -2113,9 +2133,9 @@ class SimpleSpriteAnimation : Drawable, Updatable
       coord += drift_direction * t
       coord += gravity_direction * (t*t)
 
-      image.angle = Radians(rotation) + temp_angle
+      image.rotation = Radians(rotation) + temp_angle
       image.color = color
-      image.alpha = 255 * opacity
+      image.opacity = opacity
 
       image.scale = scale
       image.draw(coord)
@@ -2137,3 +2157,9 @@ singleton class IPhone
    # 0=up-side-up, 1=right-side-up, 2=down, 3=left
 endClass
 }#
+
+augment Stopwatch
+  METHODS
+    method elapsed_ms->Int64
+      return Int64( elapsed * 1000 )
+endAugment

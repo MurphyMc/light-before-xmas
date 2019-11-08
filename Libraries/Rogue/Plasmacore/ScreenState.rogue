@@ -1,9 +1,9 @@
 module Plasmacore
 
 
-class State
+class ScreenState
   GLOBAL METHODS
-    method operator+( a:State, b:State )->State
+    method operator+( a:ScreenState, b:ScreenState )->ScreenState
       if (not a) return b
       if (not b) return a
       a.queue_state( b )
@@ -16,8 +16,8 @@ class State
     needs_first_update    = true
     previous_display_size : XY?
 
-    next_state            : State
-    prior_state           : State
+    next_state            : ScreenState
+    prior_state           : ScreenState
 
     actions : Action
 
@@ -38,11 +38,15 @@ class State
 
     method after_update
 
-    method change_state( new_state:State )->State
+    method change_state( new_state:ScreenState )->ScreenState
       return screen.change_state( new_state )
 
     method change_screen( new_screen:Screen )->Screen
       return screen.change_screen( new_screen )
+
+    method change_screen( new_screen:Screen, fade_duration:Real64, fade_color=Color.BLACK:Color )->Screen
+      Display.display_state = FadeTransition( new_screen, fade_duration, fade_color )
+      return new_screen
 
     method exit_state
       screen.exit_state
@@ -150,10 +154,10 @@ class State
     method on_update
       noAction
 
-    method push_state( new_state:State )
+    method push_state( new_state:ScreenState )
       screen.push_state( new_state )
 
-    method queue_state( new_state:State, &insert )
+    method queue_state( new_state:ScreenState, &insert )
       if (not new_state.screen) new_state.screen = screen
 
       if (insert)
@@ -170,26 +174,26 @@ class State
 
 endClass
 
-class State<<$ScreenType>> : State
+class ScreenState<<$ScreenType>> : ScreenState
   METHODS
     method screen->$ScreenType
       return @screen as $ScreenType
 endClass
 
-class ChangeScreenState( new_screen:Screen ) : State
+class ChangeScreenState( new_screen:Screen ) : ScreenState
   METHODS
     method on_start
       change_screen( new_screen )
 endClass
 
-class ExecuteState( fn:Function ) : State
+class ExecuteState( fn:Function ) : ScreenState
   METHODS
     method on_start
       fn()
       exit_state
 endClass
 
-class FadeInState : State
+class FadeInState : ScreenState
   PROPERTIES
     color   : Color
     opacity : EasedValue<<Real64>>
@@ -206,7 +210,7 @@ class FadeInState : State
       if (opacity.value == 0.0) exit_state
 endClass
 
-class FadeOutState : State
+class FadeOutState : ScreenState
   PROPERTIES
     color   : Color
     opacity : EasedValue<<Real64>>
