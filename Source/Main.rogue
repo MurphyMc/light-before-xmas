@@ -16,6 +16,7 @@ class TestScreen : Screen
 
     method on_draw
       Display.clear( Color.BLUE )
+      FlakeManager.draw
 
     method on( e:PointerEvent )
       if (e.is_press)
@@ -484,7 +485,7 @@ class MenuButton : MenuItem
       target_scale = NORMAL
 
     method draw (position : XY)
-      #MenuManager.img_button.handle = Handle.center
+      #MenuManager.img_button.anchor = Anchor.CENTER
       local size = this.size
       MenuManager.img_button.scale = cur_scale
       local s = MenuManager.img_button.size
@@ -552,7 +553,7 @@ singleton deferred class MenuManager
 
   METHODS
     method init
-      font.handle = Anchor(XY(0, -3), Handle.center)
+      font.anchor = Anchor(XY(0, -3), Anchor.CENTER)
       font.adjust_character_widths(-6)
 endClass
 
@@ -820,10 +821,10 @@ singleton class TreeGame : Screen, MyScreen [singleton]
       tree_sparkles.add(s)
 
     method init
-      spark.handle = Handle.center
+      spark.anchor = Anchor.CENTER
       spark.render_mode = RenderMode.ADDITIVE_IMAGE
 
-      timer_font.handle = Handle.top_right
+      timer_font.anchor = Anchor.TOP_RIGHT
       timer_font.spacing = -1
       timer_font.make_numerals_monospace
 
@@ -892,7 +893,7 @@ endIf
       tree_sparkles.draw
       sparks.draw
 
-      SystemFont.handle = Handle.center
+      SystemFont.anchor = Anchor.CENTER
       if (tree.solved)
         if (Random.real64 < .04) random_star_sparkle
         local p = (running_ms - tree.solved_ms) / 400.0 : Real64
@@ -901,7 +902,7 @@ endIf
         starpic.draw(XY(380,0))
         star_sparkles.draw
       endIf
-      timer_font.handle = Handle.top_right
+      timer_font.anchor = Anchor.TOP_RIGHT
       local pos = Display.size * XY(1, 0) + XY(-6, 1)
       timer_font.color = Color.black
       timer_font.draw(tree.time_string, pos + XY(2,2))
@@ -910,7 +911,7 @@ endIf
 
       local button = flake_button
       button.scale = 1
-      button.angle = Radians(0)
+      button.rotation = Radians(0)
       button.color = Color(0,0,0,192)
       #button.draw(XY(42, 42))
       button.draw(XY(7, 5))
@@ -1026,22 +1027,22 @@ augment Global
       return Int64(System.time*1000) + time_offset
 endAugment
 
-#{
 class FlakeManager [singleton]
   PROPERTIES
-    num_flakes = 25 : Int32
-    add_delay_min = 500 : Int32
-    add_delay_max = 2500 : Int32
+    num_flakes    = 25
+    add_delay_min = 500
+    add_delay_max = 2500
 
     flakes = Flake[]
     images = Image[]
 
     next_add : Int64
+
   METHODS
     method init
       forEach (i in 1..6)
         images.add(Image("flakes/flake$.png" (i)))
-        images.last.handle = Handle.center
+        images.last.anchor = Anchor.CENTER
       endForEach
 
       flakes.add(Flake())
@@ -1055,12 +1056,12 @@ class FlakeManager [singleton]
 
         p += (flake.vel * t)
 
-        p += XY(sin(Radians(2 * pi * t / flake.sway_period + 2 * pi * flake.sway_offset)) * flake.sway_amount, 0)
-        p += XY(sin(Radians(2 * pi * t / flake.sway_period2 + 2 * pi * flake.sway_offset2)) * flake.sway_amount2, 0)
+        p += XY(Radians(2 * pi * t / flake.sway_period + 2 * pi * flake.sway_offset).sin * flake.sway_amount, 0)
+        p += XY(Radians(2 * pi * t / flake.sway_period2 + 2 * pi * flake.sway_offset2).sin * flake.sway_amount2, 0)
 
         flake.image.scale = flake.size
         flake.image.color = flake.color
-        flake.image.angle = flake.rotation * t
+        flake.image.rotation = flake.rotation * t
         if (p.y - flake.image.size.y > Display.size.y)
           flakes[i] = Flake()
         else
@@ -1097,12 +1098,13 @@ class Flake
     method t->Real64
       return (running_ms - start_ms) / 1000.0
     method init
-      while (abs(rotation.value) < 8)
+      while (rotation.value.abs < 8)
         rotation = Degrees(Random.real64(-10, 25))
       endWhile
 
 endClass
 
+#{
 class Tree
   PROPERTIES
     solved = false : Logical
@@ -1491,7 +1493,7 @@ class Tile
       if (index == -1) return
       local Image img = TileImages.imgs[index]
       local finish = rotating : Logical
-      img.angle = rotation
+      img.rotation = rotation
       finish = finish and !rotating
       local sx = img.size.x : Int32
       local sy = img.size.y : Int32
@@ -1659,11 +1661,11 @@ class TileImages [singleton]
     method add_img (name : String)
       local Image img = Image(name)
       imgs.add(img)
-      img.handle = Handle.center
+      img.anchor = Anchor.CENTER
 
     method init
       bulb = Image("bulb.png")
-      bulb.handle = Handle.center
+      bulb.anchor = Anchor.CENTER
       add_img("1.png")
       add_img("3.png")
       add_img("5.png")
