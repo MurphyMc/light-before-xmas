@@ -13,6 +13,7 @@ class TestScreen : Screen
     method on_start
       Music.tick
       local ssa :  SimpleSpriteAnimation
+      local menu : Menu
 
     method on_draw
       Display.clear( Color.BLUE )
@@ -412,6 +413,7 @@ deferred singleton class PauseMenu : Screen, MenuHost, MyScreen
     method on(e : MouseEvent)
       menu.on(e)
 endClass
+}#
 
 class MenuItem [abstract]
   METHODS
@@ -460,15 +462,15 @@ endClass
 
 class MenuButton : MenuItem
   PROPERTIES
-    text : String
-    highlight : Logical
+    text            : String
+    highlight       : Logical
 
-    cur_scale : Real64
-    target_scale : Real64
-    locked = false : Logical
+    cur_scale       : Real64
+    target_scale    : Real64
+    locked = false  : Logical
 
     HIGHLIGHT = .99 : Real64
-    NORMAL = .90 : Real64
+    NORMAL = .90    : Real64
 
   METHODS
     method identifier->Object
@@ -544,62 +546,65 @@ class MenuEntry(item:MenuItem)
     position : XY
 endClass
 
-singleton deferred class MenuManager
+class MenuManager [singleton]
   PROPERTIES
-    img_button("button_blank.png") : Image
-    font("font_Book Antiqua_37_bold.png") : Font
-    on_select("sfx_tick", 1) : SoundEffect
-    highlight("sfx_tock", 3) : SoundEffect
+    img_button = Image("button_blank.png")
+    font       = Font("font_Book Antiqua_37_bold.png")
+    on_select  = SoundEffect("sfx_tick", 1)
+    highlight  = SoundEffect("sfx_tock", 3)
 
   METHODS
     method init
-      font.anchor = Anchor(XY(0, -3), Anchor.CENTER)
-      font.adjust_character_widths(-6)
+      #font.anchor = Anchor(XY(0, -3), Anchor.CENTER)
+      font.anchor = Anchor.CENTER
+      font.spacing_adjustment = -6
 endClass
 
 class Menu
   PROPERTIES
-    entries() : MenuEntry[]
+    entries    = MenuEntry[]
 
     ###stagger : Logical
     horizontal : Logical
-    box : Box
-    justify = 1 : Int32 # 0->Left 1->Center 2->Right
+    box        : Box
+    justify    = 1   # 0->Left 1->Center 2->Right
 
-    target : MenuHost
+    target     : MenuHost
 
     current_offset = XY.zero : XY
-    target_offset = XY.zero : XY
+    target_offset  = XY.zero : XY
 
     _dirty = true : Logical
-    _current : MenuEntry
+    _current      : MenuEntry
 
   METHODS
     method fly_out_left
-      target_offset = Display.size * XY(-1, 0)
+      target_offset = Display.at(-1, 0)
 
     method fly_out_bottom
-      target_offset = Display.size * XY(0, 1)
+      target_offset = Display.at(0, 1)
 
     method fly_in_right
       target_offset = current_offset
-      current_offset = Display.size * XY(1, 0)
+      current_offset = Display.at(1, 0)
 
     method fly_in_bottom
       target_offset = current_offset
-      current_offset = Display.size * XY(0, 1)
+      current_offset = Display.at(0, 1)
 
     method init ()
-      box = Box(XY(0,0),Display.size).cropped(100)
+      box = Display.bounds.cropped(100)
 
     method init (box)
 
     method justify_left
       justify = 0
       _dirty = true
+
     method justify_right
       justify = 2
       _dirty = true
+
     method justify_centered
       justify = 1
       _dirty = true
@@ -611,9 +616,11 @@ class Menu
     method _getmaj (v : XY)->Real64
       if (horizontal) return v.x
       return v.y
+
     method _getmin (v : XY)->Real64
       if (horizontal) return v.y
       return v.x
+
     method _vec (minor : Real64, major : Real64)->XY
       if (horizontal) return XY(major, minor)
       return XY(minor, major)
@@ -622,17 +629,17 @@ class Menu
       if (not _dirty) return
       _dirty = false
 
-      local total_major = 0 : Real64
+      local total_major = 0.0
       forEach (entry in entries)
         total_major += _getmaj(entry.item.size)
       endForEach
-      local leftover_major = _getmaj(box.size) - total_major : Real64
-      local padding_major = leftover_major / max(1, entries.count - 1)
+      local leftover_major = _getmaj(box.size) - total_major
+      local padding_major = leftover_major / 1.or_larger(entries.count - 1)
 
       total_major = 0
-      local i = 0 : Int32
+      local i = 0
       forEach (entry in entries)
-        local minor = _getmin(box.position) : Real64
+        local minor = _getmin(box.position)
         which (justify)
           case 0:
             # Nothing
@@ -658,7 +665,7 @@ class Menu
       endForEach
 
     method update_current (check_button_state = true : Logical)
-      local MenuEntry entry = find_under(check_button_state)
+      local entry = find_under(check_button_state)
       if (entry == null)
         if (_current?)
           _current.item.on_out
@@ -673,37 +680,32 @@ class Menu
         #MenuManager.highlight.play
       endIf
 
-    method on (e : MouseEvent)
-      which (e.type)
-        case MouseEvent.button_press:
-          update_current
-          if (_current?)
-            _current.item.on_down
-          endIf
-        case MouseEvent.button_release:
-          update_current(false)
-          if (_current?)
-            _current.item.on_up
-            if (target?) target.menu_selected(_current, _current.item.identifier)
-            MenuManager.on_select.play
-            _current = null
-          endIf
-        case MouseEvent.movement:
-          update_current
-      endWhich
+    method on (e : PointerEvent)
+      if (e.is_press)
+        update_current
+        if (_current?)
+          _current.item.on_down
+        endIf
+      elseIf (e.is_release)
+        update_current(false)
+        if (_current?)
+          _current.item.on_up
+          if (target?) target.menu_selected(_current, _current.item.identifier)
+          MenuManager.on_select.play
+          _current = null
+        endIf
+      elseIf (e.is_move)
+        update_current
+      endIf
 
     method find_under (check_button_state = true : Logical)->MenuEntry
       if (check_button_state)
-        local good = false
-        forEach (i in 0..Input.mouse_button_state.count-1)
-          if (Input.mouse_button_state[i]) good = true
-        endForEach
-        if (not good) return null
+        if (Pointer.press_count == 0) return null
       endIf
 
       forEach (entry in entries)
         local p = entry.position + current_offset
-        if ((entry.item.hitbox + p).contains(Input.mouse_position))
+        if ((entry.item.hitbox + p).contains(Pointer.position))
           return entry
         endIf
       endForEach
@@ -747,6 +749,7 @@ class Menu
       }#
 endClass
 
+#{
 singleton class TreeGame : Screen, MyScreen [singleton]
   PROPERTIES
     flake_button = Image("flake_button.png")
@@ -825,7 +828,7 @@ singleton class TreeGame : Screen, MyScreen [singleton]
       spark.render_mode = RenderMode.ADDITIVE_IMAGE
 
       timer_font.anchor = Anchor.TOP_RIGHT
-      timer_font.spacing = -1
+      timer_font.spacing_adjustment = -1
       timer_font.make_numerals_monospace
 
       SFX # cache SFX
@@ -984,6 +987,7 @@ endIf
         case KeyEvent.release:
       endWhich
 endClass
+}#
 
 
 class Pair<<$AType, $BType>>
@@ -1010,12 +1014,11 @@ class LitSets
   PROPERTIES
     #    lit() : HashSet<<Tile>>
     #    unlit() : HashSet<<Tile>>
-    lit() : Tile[]
-    unlit() : Tile[]
+    lit     = Tile[]
+    unlit   = Tile[]
   METHODS
     method init
 endClass
-}#
 
 augment Global
   PROPERTIES
