@@ -757,7 +757,7 @@ class TreeGame : Screen, MyScreen [singleton]
     tree : Tree
     ticks : Int32
     bg = Image("new_bg.jpg").[ anchor=Anchor.TOP_LEFT ]
-    treepic = Image("new_tree_base.png").[ anchor=Anchor.TOP_LEFT ]
+    treepic = Image("new_tree_base.png")
     starpic = Image("new_tree_star_glow_white_380.png").[ anchor=Anchor.TOP_LEFT ]
     tree_sparkle_map = Bitmap(Plasmacore.data_file("tree_sparkle_map.png"))
     star_sparkle_map = Bitmap(Plasmacore.data_file("star_sparkle_map.png"))
@@ -780,6 +780,8 @@ class TreeGame : Screen, MyScreen [singleton]
       timer_font.anchor = Anchor.TOP_RIGHT
       timer_font.spacing_adjustment = -1
       timer_font.make_numerals_monospace
+
+      treepic.position = XY(1024,768) / 2
 
       SFX # cache SFX
       FlakeManager
