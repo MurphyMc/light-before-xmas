@@ -1,5 +1,7 @@
 uses Plasmacore
 
+$define TRANSITION_TIME 1
+
 Display( "Main" ).screen = Launch()
 
 #TODO: put dead check stuff in MyScreen
@@ -17,14 +19,31 @@ class Launch : Screen
     method on_update
       ticks--
       if (ticks == 0)
-        FadeTo( GameScreen(), 0.5 )
+        TransitionTo( GameScreen(), 0.5 )
       endIf
 endClass
 
 class GameScreen : Screen
   METHODS
+    method apply_transition_offset
+      if (transition_info)
+        local info = transition_info.value
+        local progress = info.eased_progress( &invert_ease_in )
+        if (info.is_transitioning_out)
+          Display.offset += Display.size * info.exit_vector * progress
+        else
+          Display.offset += Display.size * info.exit_vector * progress
+        endIf
+      endIf
+
     method on_start
       change_state( MainMenu )
+
+    method on_transition_after_draw
+      if (transition_info.value.exit_vector.is_zero)
+        local info = transition_info.value
+        Display.bounds.fill( info.color.with_alpha(info.eased_progress(&invert_ease_in)) )
+      endIf
 endClass
 
 class CreditsMenu : BaseMenuState [singleton]
@@ -38,14 +57,15 @@ class CreditsMenu : BaseMenuState [singleton]
       menu.add(MenuButton("Go Back"))
       menu.add(MenuSpacer(60))
 
-    method delayed_execute (action : Object)
-      println(".")
-      if (action == "Go Back")
+      #method immediate_execute (action : Object)
+      #println(".")
+      #if (action == "Go Back")
         #        pop
-      endIf
+        #TransitionToExitState( TRANSITION_TIME, &exit_vector=XY(-1,0) )
+        #endIf
 endClass
 
-class BaseMenuState : ScreenState, MyScreen, MenuHost
+class BaseMenuState : ScreenState<<GameScreen>>, MyScreen, MenuHost
   PROPERTIES
     menu : Menu
     entry : Object
@@ -55,12 +75,14 @@ class BaseMenuState : ScreenState, MyScreen, MenuHost
 
   METHODS
     method on_resume
-      menu.current_offset = Display.at(0.5,0)  # FIXME
-      menu.fly_in_right
+      menu.offset = XY.zero
+      #menu.current_offset = Display.at(0.5,0)  # FIXME
+      #menu.fly_in_right
 
     method on_start
-      menu.current_offset = Display.at(0.5,0)  # FIXME
-      menu.fly_in_right
+      menu.offset = XY.zero
+      #menu.current_offset = Display.at(0.5,0)  # FIXME
+      #menu.fly_in_right
 
     method on_update
       Music.tick
@@ -76,7 +98,7 @@ class BaseMenuState : ScreenState, MyScreen, MenuHost
 
     method immediate_execute (action : Object)
       # Override
-      menu.fly_out_left
+      #menu.fly_out_left
 
     method check_dead->Logical
       if (last_not_dead == -1) last_not_dead = running_ms
@@ -94,18 +116,20 @@ class BaseMenuState : ScreenState, MyScreen, MenuHost
       Graphics.scale_to_fill( Anchor.BOTTOM )
       FlakeManager.draw
       Graphics.scale_to_fit( Anchor.CENTER )
+      screen.apply_transition_offset
       menu.draw
 
     method menu_selected (entry : MenuEntry, identifier : Object)
       this.entry = entry
-      immediate_execute(entry)
+      #immediate_execute(entry)
+      TransitionToExitState( TRANSITION_TIME, &exit_vector=XY(-1,0) )
       countdown = 30
 
     method on (e : PointerEvent)
       menu.on(e)
 endClass
 
-class MainMenu : ScreenState, MenuHost, MyScreen [singleton]
+class MainMenu : ScreenState<<GameScreen>>, MenuHost, MyScreen [singleton]
   PROPERTIES
     menu      : Menu
     action    : Object
@@ -125,13 +149,12 @@ class MainMenu : ScreenState, MenuHost, MyScreen [singleton]
       TreeGame
       Music
 
-    method on_resume
-      menu.current_offset = Display.at(0.5,0)
-      menu.fly_in_right
-
     method on_start
-      menu.current_offset = Display.at(0.5,0)
-      menu.fly_in_right
+      menu.offset = Display.at(0.5,0)
+
+    #method on_resume
+      #menu.current_offset = Display.at(0.5,0)
+      #menu.fly_in_right
 
     method on_update
       Music.tick
@@ -142,11 +165,11 @@ class MainMenu : ScreenState, MenuHost, MyScreen [singleton]
       local identifier = action
       action = null
       if (identifier == "Start")
-        FadeTo( TreeGame, 0.5 )
+        TransitionTo( TreeGame, TRANSITION_TIME, &exit_vector=XY(0,-1) )
       elseIf (identifier == "Options")
-        push_state(OptionsMenu)
+        TransitionToPushState( OptionsMenu, TRANSITION_TIME, &exit_vector=XY(-1,0) )
       elseIf (identifier == "Credits")
-        push_state(CreditsMenu)
+        TransitionToPushState( CreditsMenu, TRANSITION_TIME, &exit_vector=XY(1,0) )
       endIf
 
     method on_draw
@@ -154,12 +177,13 @@ class MainMenu : ScreenState, MenuHost, MyScreen [singleton]
       Graphics.scale_to_fill( Anchor.BOTTOM )
       FlakeManager.draw
       Graphics.scale_to_fit( Anchor.CENTER )
+      screen.apply_transition_offset
       menu.draw
 
     method menu_selected (entry : MenuEntry, identifier : Object)
-      menu.fly_out_left
+      #menu.fly_out_left
       action = identifier
-      countdown = 30
+      #countdown = 30
 
     method on (e : PointerEvent)
       menu.on(e)
@@ -277,7 +301,7 @@ class MyScreen [aspect]
       }#
 endClass
 
-class OptionsMenu : ScreenState, MenuHost, MyScreen [singleton]
+class OptionsMenu : ScreenState<<GameScreen>>, MenuHost, MyScreen [singleton]
   PROPERTIES
     menu      : Menu
     action    : MenuEntry
@@ -296,8 +320,9 @@ class OptionsMenu : ScreenState, MenuHost, MyScreen [singleton]
       menu.add(MenuSpacer(60))
 
     method on_start
-      menu.current_offset = XY.zero
-      menu.fly_in_right
+      menu.offset = XY.zero
+      #menu.current_offset = XY.zero
+      #menu.fly_in_right
 
     method on_update
       Music.tick
@@ -307,11 +332,7 @@ class OptionsMenu : ScreenState, MenuHost, MyScreen [singleton]
       if (countdown > 0) return
       local identifier = action.item.identifier
       if (identifier == "Go Back")
-        if (prior_state == MainMenu)
-          exit_state
-        else
-          FadeToExitState()
-        endIf
+        TransitionToExitState( TRANSITION_TIME, &exit_vector=XY(1,0) )
       elseIf (identifier == "Turn Music On")
         (action.item as MenuButton).text = "Turn Music Off"
         Music.paused = false
@@ -326,26 +347,28 @@ class OptionsMenu : ScreenState, MenuHost, MyScreen [singleton]
         SFX.enabled = false
       endIf
       action = null
+
     method on_draw
       Graphics.draw_background
       Graphics.scale_to_fill( Anchor.BOTTOM )
       FlakeManager.draw
       Graphics.scale_to_fit( Anchor.CENTER )
+      screen.apply_transition_offset
       menu.draw
 
     method menu_selected (entry : MenuEntry, identifier : Object)
       action = entry
       countdown = 2
       if (identifier == "Go Back")
-        menu.fly_out_left
-        countdown = 20
+        #menu.fly_out_left
+        #countdown = 20
       endIf
 
     method on(e : PointerEvent)
       menu.on(e)
 endClass
 
-class PauseMenu : ScreenState, MenuHost, MyScreen [singleton]
+class PauseMenu : ScreenState<<GameScreen>>, MenuHost, MyScreen [singleton]
   PROPERTIES
     menu : Menu
     action : MenuEntry
@@ -365,8 +388,7 @@ class PauseMenu : ScreenState, MenuHost, MyScreen [singleton]
       menu.add(MenuButton("Turn Sound Off"))
 
     method on_start
-      menu.current_offset = XY.zero
-      menu.fly_in_bottom
+      menu.offset = XY.zero
 
     method on_update
       Music.tick
@@ -376,13 +398,12 @@ class PauseMenu : ScreenState, MenuHost, MyScreen [singleton]
       if (countdown > 0) return
       local identifier = action.item.identifier
       if (identifier == "Resume")
-        FadeToExitState()
+        TransitionToExitState( TRANSITION_TIME, &exit_vector=XY(0,-1) )
       elseIf (identifier == "New Game")
         TreeGame.tree = Tree(17)
-        FadeToExitState()
+        TransitionToExitState( TRANSITION_TIME, &exit_vector=XY(0,-1) )
       elseIf (identifier == "Main Menu")
-        exit_state
-        FadeTo( MainMenu )
+        TransitionTo( MainMenu, TRANSITION_TIME, &exit_vector=XY(0,1) )
       elseIf (identifier == "Turn Music On")
         (action.item as MenuButton).text = "Turn Music Off"
         Music.paused = false
@@ -403,14 +424,16 @@ class PauseMenu : ScreenState, MenuHost, MyScreen [singleton]
       Graphics.scale_to_fill( Anchor.BOTTOM )
       FlakeManager.draw
       Graphics.scale_to_fit( Anchor.CENTER )
+
+      screen.apply_transition_offset
       menu.draw
 
     method menu_selected (entry : MenuEntry, identifier : Object)
       action = entry
       countdown = 2
       if (identifier == "Resume" or identifier == "New Game" or identifier == "Main Menu")
-        menu.fly_out_bottom
-        countdown = 20
+        #menu.fly_out_bottom
+        #countdown = 20
       endIf
 
     method on(e : PointerEvent)
@@ -754,9 +777,13 @@ class Menu
         _current = null
       endIf
       }#
+
+    method set_offset( offset:XY )
+      current_offset = offset
+      target_offset = offset
 endClass
 
-class TreeGame : ScreenState, MyScreen [singleton]
+class TreeGame : ScreenState<<GameScreen>>, MyScreen [singleton]
   PROPERTIES
     flake_button = Image("flake_button.png").[ anchor=Anchor.TOP_LEFT ]
     spark = Image("twinkle.png")
@@ -865,7 +892,7 @@ class TreeGame : ScreenState, MyScreen [singleton]
         Global.time_offset -= (running_ms - last_slow_timer)
         if (not tree.solved)
           tree.pause(last_slow_timer + 2000)
-          FadeToPushState( PauseMenu )
+          TransitionToPushState( PauseMenu )
           dead = true
         endIf
       endIf
@@ -884,7 +911,6 @@ class TreeGame : ScreenState, MyScreen [singleton]
       # Called every second or two
       Music.tick
 
-
     method on_draw
       if (check_dead)
         prior.on_draw
@@ -895,6 +921,9 @@ class TreeGame : ScreenState, MyScreen [singleton]
       Graphics.scale_to_fill( Anchor.BOTTOM )
       FlakeManager.draw
       Graphics.scale_to_fit( Anchor.BOTTOM )
+
+      screen.apply_transition_offset
+
       treepic.draw
       tree.draw
       tree.make_sparks
@@ -920,6 +949,9 @@ endIf
 
       timer_font.anchor = Anchor.TOP_RIGHT
       local pos = Display.at(1, 0) + XY(-6, 1)
+
+      screen.apply_transition_offset
+
       timer_font.color = Color.BLACK
       timer_font.draw(tree.time_string, pos + XY(2,2))
       timer_font.color = Color.WHITE
@@ -944,7 +976,7 @@ endIf
         if (e.position.x < 85 and e.position.y < 85)
           MenuManager.on_select.play
           tree.pause
-          FadeToPushState( PauseMenu )
+          TransitionToPushState( PauseMenu, TRANSITION_TIME, &exit_vector=XY(0,1) ) # FIXME
         endIf
         last_button = e.index
         last_position = e.position
@@ -1073,7 +1105,7 @@ class FlakeManager [singleton]
         flake.image.scale = flake.size
         flake.image.color = flake.color
         flake.image.rotation = flake.rotation * t
-        if (p.y - flake.image.size.y > Display.size.y)
+        if (p.y - flake.image.size.y > Display.bounds.y2)
           flakes[i] = Flake()
         else
           flake.image.draw(p)
