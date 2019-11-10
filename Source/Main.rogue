@@ -1,35 +1,5 @@
 uses Plasmacore
 
-#{
-Display( "Main" ).screen = ColorScreen()
-
-class ColorScreen : Screen
-  METHODS
-    method on_start
-      change_state( Red() )
-endClass
-
-class Red : ScreenState<<ColorScreen>>
-  METHODS
-    method on_start
-
-    method on_draw
-      Display.clear( Color.RED )
-
-    method on_update
-      if (Display.effect instanceOf NoEffect) FadeTo( Green(), 2, Color.YELLOW )
-endClass
-
-class Green : ScreenState<<ColorScreen>>
-  METHODS
-    method on_draw
-      Display.clear( Color.GREEN )
-
-    method on_update
-      if (Display.effect instanceOf NoEffect) FadeTo( Red(), 2, Color.YELLOW )
-endClass
-}#
-
 Display( "Main" ).screen = Launch()
 
 #TODO: put dead check stuff in MyScreen
@@ -50,8 +20,6 @@ class Launch : Screen
         FadeTo( MainMenu, 0.5 )
       endIf
 endClass
-
-#class GameState : ScreenState<<
 
 class CreditsMenu : BaseMenuState [singleton]
   METHODS
@@ -116,8 +84,10 @@ class BaseMenuState : ScreenState, MyScreen, MenuHost
 
     method on_draw
       if (check_dead) return
-      TreeGame.bg.draw
+      Graphics.draw_background
+      Graphics.scale_to_fill( Anchor.BOTTOM )
       FlakeManager.draw
+      Graphics.scale_to_fit( Anchor.CENTER )
       menu.draw
 
     method menu_selected (entry : MenuEntry, identifier : Object)
@@ -174,8 +144,10 @@ class MainMenu : Screen, MenuHost, MyScreen [singleton]
       endIf
 
     method on_draw
-      TreeGame.bg.draw
+      Graphics.draw_background
+      Graphics.scale_to_fill( Anchor.BOTTOM )
       FlakeManager.draw
+      Graphics.scale_to_fit( Anchor.CENTER )
       menu.draw
 
     method menu_selected (entry : MenuEntry, identifier : Object)
@@ -185,6 +157,9 @@ class MainMenu : Screen, MenuHost, MyScreen [singleton]
 
     method on (e : PointerEvent)
       menu.on(e)
+
+    method on_resize
+      TreeGame.on_resize
 endClass
 
 class ScreenManager [singleton]
@@ -346,8 +321,10 @@ class OptionsMenu : ScreenState, MenuHost, MyScreen [singleton]
       endIf
       action = null
     method on_draw
-      TreeGame.bg.draw
+      Graphics.draw_background
+      Graphics.scale_to_fill( Anchor.BOTTOM )
       FlakeManager.draw
+      Graphics.scale_to_fit( Anchor.CENTER )
       menu.draw
 
     method menu_selected (entry : MenuEntry, identifier : Object)
@@ -416,8 +393,10 @@ class PauseMenu : ScreenState, MenuHost, MyScreen [singleton]
       action = null
 
     method on_draw
-      TreeGame.bg.draw
+      Graphics.draw_background
+      Graphics.scale_to_fill( Anchor.BOTTOM )
       FlakeManager.draw
+      Graphics.scale_to_fit( Anchor.CENTER )
       menu.draw
 
     method menu_selected (entry : MenuEntry, identifier : Object)
@@ -773,13 +752,13 @@ endClass
 
 class TreeGame : Screen, MyScreen [singleton]
   PROPERTIES
-    flake_button = Image("flake_button.png")
+    flake_button = Image("flake_button.png").[ anchor=Anchor.TOP_LEFT ]
     spark = Image("twinkle.png")
     tree : Tree
     ticks : Int32
     bg = Image("new_bg.jpg").[ anchor=Anchor.TOP_LEFT ]
     treepic = Image("new_tree_base.png").[ anchor=Anchor.TOP_LEFT ]
-    starpic = Image("new_tree_star_glow_white_380.png")
+    starpic = Image("new_tree_star_glow_white_380.png").[ anchor=Anchor.TOP_LEFT ]
     tree_sparkle_map = Bitmap(Plasmacore.data_file("tree_sparkle_map.png"))
     star_sparkle_map = Bitmap(Plasmacore.data_file("star_sparkle_map.png"))
     sparks   = MultiDrawable()
@@ -794,6 +773,23 @@ class TreeGame : Screen, MyScreen [singleton]
     last_slow_timer : Int64
 
   METHODS
+    method init
+      spark.anchor = Anchor.CENTER
+      spark.render_mode = RenderMode.ADDITIVE_IMAGE
+
+      timer_font.anchor = Anchor.TOP_RIGHT
+      timer_font.spacing_adjustment = -1
+      timer_font.make_numerals_monospace
+
+      SFX # cache SFX
+      FlakeManager
+      Display.background_color = Color(0,0,0)
+      Music.tick
+      #Display.background_color = Color(255,255,255)
+
+
+    method on_resize
+
     method random_on_map (map : Bitmap)->XY
       while (true)
         local p = XY(Random.int32(0, map.size.x), Random.int32(0, map.size.y))
@@ -844,24 +840,11 @@ class TreeGame : Screen, MyScreen [singleton]
 
       tree_sparkles.add(s)
 
-    method init
-      spark.anchor = Anchor.CENTER
-      spark.render_mode = RenderMode.ADDITIVE_IMAGE
-
-      timer_font.anchor = Anchor.TOP_RIGHT
-      timer_font.spacing_adjustment = -1
-      timer_font.make_numerals_monospace
-
-      SFX # cache SFX
-      FlakeManager
-      Display.background_color = Color(0,0,0)
-      Music.tick
-      #Display.background_color = Color(255,255,255)
-
     method on_start
       tree = Tree(17)
       tree.resume
       last_slow_timer = running_ms
+      on_resize
 
     method on_resume
       tree.resume
@@ -900,8 +883,10 @@ class TreeGame : Screen, MyScreen [singleton]
         return
       endIf
       #SystemFont.draw( ""+Input.mouse_position, Display.center )
-      bg.draw
+      Graphics.draw_background
+      Graphics.scale_to_fill( Anchor.BOTTOM )
       FlakeManager.draw
+      Graphics.scale_to_fit( Anchor.BOTTOM )
       treepic.draw
       tree.draw
       tree.make_sparks
@@ -922,8 +907,11 @@ endIf
         starpic.draw(XY(380,0))
         star_sparkles.draw
       endIf
+
+      Display.clear_scale
+
       timer_font.anchor = Anchor.TOP_RIGHT
-      local pos = Display.size * XY(1, 0) + XY(-6, 1)
+      local pos = Display.at(1, 0) + XY(-6, 1)
       timer_font.color = Color.BLACK
       timer_font.draw(tree.time_string, pos + XY(2,2))
       timer_font.color = Color.WHITE
@@ -2178,3 +2166,17 @@ endAugment
 routine Corners( x1:Real64, y1:Real64, x2:Real64, y2:Real64 )->Box
   return Box( x1, y1, x2-x1, y2-y1 )
 endRoutine
+
+class Graphics [singleton]
+  METHODS
+    method draw_background
+      Display.clear_scale
+      TreeGame.bg.scale_to_fill( Display.bounds )
+      TreeGame.bg.draw
+
+    method scale_to_fill( anchor:Anchor )
+      Display.scale_to_fill( 1024, 768, anchor )
+
+    method scale_to_fit( anchor:Anchor )
+      Display.scale_to_fit( 1024, 768, anchor )
+endClass
