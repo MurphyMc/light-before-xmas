@@ -37,7 +37,11 @@ class DisplayEffect
 
     method update->DisplayEffect
       if (not is_finished) return this
-      if (next_effect)     return next_effect
+      if (next_effect)
+        local result = next_effect
+        next_effect = null
+        return result
+      endIf
       return NoEffect
 endClass
 
