@@ -929,6 +929,9 @@ endIf
       button.draw(XY(5, 3))
       #button.draw(XY(40, 40))
 
+      Graphics.scale_to_fit( Anchor.BOTTOM )
+      # Leave this transform in place to handle input events between updates
+
 
     method on(e : PointerEvent)
       if (e.is_press)
