@@ -123,6 +123,15 @@ class FadeTo : BaseFadeDisplayEffect
 
 endClass
 
+class FadeToPushState : FadeTo
+  METHODS
+    method init( to_state, duration=0.5, color=Color.BLACK )
+      prior.init( to_state, duration, color )
+
+    method on_fade_out_finished
+      Display.screen.state.push_state( to_state )
+endClass
+
 class FadeToExitState : BaseFadeDisplayEffect
   METHODS
     method on_fade_out_finished

@@ -17,8 +17,14 @@ class Launch : Screen
     method on_update
       ticks--
       if (ticks == 0)
-        FadeTo( MainMenu, 0.5 )
+        FadeTo( GameScreen(), 0.5 )
       endIf
+endClass
+
+class GameScreen : Screen
+  METHODS
+    method on_start
+      change_state( MainMenu )
 endClass
 
 class CreditsMenu : BaseMenuState [singleton]
@@ -49,11 +55,11 @@ class BaseMenuState : ScreenState, MyScreen, MenuHost
 
   METHODS
     method on_resume
-      menu.current_offset = XY.zero
+      menu.current_offset = Display.at(0.5,0)  # FIXME
       menu.fly_in_right
 
     method on_start
-      menu.current_offset = XY.zero
+      menu.current_offset = Display.at(0.5,0)  # FIXME
       menu.fly_in_right
 
     method on_update
@@ -99,7 +105,7 @@ class BaseMenuState : ScreenState, MyScreen, MenuHost
       menu.on(e)
 endClass
 
-class MainMenu : Screen, MenuHost, MyScreen [singleton]
+class MainMenu : ScreenState, MenuHost, MyScreen [singleton]
   PROPERTIES
     menu      : Menu
     action    : Object
@@ -750,7 +756,7 @@ class Menu
       }#
 endClass
 
-class TreeGame : Screen, MyScreen [singleton]
+class TreeGame : ScreenState, MyScreen [singleton]
   PROPERTIES
     flake_button = Image("flake_button.png").[ anchor=Anchor.TOP_LEFT ]
     spark = Image("twinkle.png")
@@ -859,7 +865,7 @@ class TreeGame : Screen, MyScreen [singleton]
         Global.time_offset -= (running_ms - last_slow_timer)
         if (not tree.solved)
           tree.pause(last_slow_timer + 2000)
-          FadeTo( PauseMenu )
+          FadeToPushState( PauseMenu )
           dead = true
         endIf
       endIf
@@ -938,7 +944,7 @@ endIf
         if (e.position.x < 85 and e.position.y < 85)
           MenuManager.on_select.play
           tree.pause
-          FadeTo( PauseMenu )
+          FadeToPushState( PauseMenu )
         endIf
         last_button = e.index
         last_position = e.position
