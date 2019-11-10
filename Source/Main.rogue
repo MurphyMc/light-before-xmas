@@ -192,6 +192,7 @@ class MainMenu : ScreenState<<GameScreen>>, MenuHost, MyScreen [singleton]
       TreeGame.on_resize
 endClass
 
+#{
 class ScreenManager [singleton]
   PROPERTIES
     flipped = false : Logical
@@ -256,6 +257,7 @@ class ScreenManager [singleton]
         endIf
       endIf
 endClass
+}#
 
 class MyScreen [aspect]
   METHODS
