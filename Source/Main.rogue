@@ -29,11 +29,7 @@ class GameScreen : Screen
       if (transition_info)
         local info = transition_info.value
         local progress = info.eased_progress( &invert_ease_in )
-        if (info.is_transitioning_out)
-          Display.offset += Display.size * info.exit_vector * progress
-        else
-          Display.offset += Display.size * info.exit_vector * progress
-        endIf
+        Display.offset += Display.size * info.exit_vector * progress
       endIf
 
     method on_start
