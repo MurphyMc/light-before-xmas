@@ -1,22 +1,22 @@
 # The Light Before Christmas
 
-The Light Before Christmas is a simple puzzle game inspired by several similar games available on the web.  This version originated as an app for the original iPad written by Murphy McCauley in 2010, though it was never widely released.  In 2019, Murphy and Abe Pralle updated it.
-
-The Light Before Christmas is written in the Rogue programming language (originally using Rogue's predecessor, Slag) using the Plasmacore game programming framework.  Both Rogue and Plasmacore are open source software under the MIT license, and they are available on GitHub.
-
-
-# How To Play
-
-The point of the game is to light up every bulb on the Christmas tree.
+The Light Before Christmas is a simple puzzle game, the point of which is to light up every bulb on the Christmas tree.
 
 Electricity starts at the base of the tree, and flows through connected wire segments.  It is possible to rotate the wire segments and bulbs such that every bulb and wire segment is energized, and every wire segment leads to either a bulb or another wire segment (that is, there are no "loose" wire segments which go nowhere and spark).  See how quickly you can reach that state from the randomized start state!
 
 Clicking on wires or bulbs will rotate them.  If you have a touch screen you can also "flick" them in either direction.
 
 
+# About
+
+The Light Before Christmas began as an app for the original iPad written by Murphy McCauley at the end of 2010.  It was inspired by several similar games available on the web which were written in Flash and were therefore unplayable on the iPad.  The original app was never widely released, but nine years later, Murphy and Abe Pralle updated it for modern tablets, phones, and the web.
+
+The Light Before Christmas is written in the Rogue programming language (originally using Rogue's predecessor, Slag) using the Plasmacore game programming framework.  Both Rogue and Plasmacore are open source software under the MIT license, and they are available on GitHub.
+
+
 # Music
 
-The music is all by Kevin MacLeod and is available under Creative Commons licenses.
+The wonderful music is all by Kevin MacLeod and is available under Creative Commons licenses.
 
 "Dance of the Sugar Plum Fairies" \
 Kevin MacLeod (incompetech.com) \
