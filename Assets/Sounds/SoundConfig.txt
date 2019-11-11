@@ -24,6 +24,5 @@ include **
 include **
 
 [Web]
-@ **.wav format:ogg
 @ **.mp3 format:ogg
 include **
