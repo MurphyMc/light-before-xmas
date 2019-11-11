@@ -1,5 +1,5 @@
 OPT_CFLAGS += -O3
-OPT_CFLAGS += -s ASSERTIONS=0 -s PRECISE_I64_MATH=0 --closure 0
+OPT_CFLAGS += -s ASSERTIONS=0 --closure 0
 
 # asm.js wants a multiple of 16 MB
 RUNTIME_MEMORY = 16MB
@@ -18,6 +18,7 @@ SDLCORE_FOLDER = $(PROJECT_ROOT)/Libraries/Plasmacore/SDL
 BUILD_FOLDER    := $(PROJECT_ROOT)/Build/$(TARGET)
 
 CFLAGS += --shell-file index.html
+#CFLAGS += -s EXTRA_EXPORTED_RUNTIME_METHODS='["Pointer_stringify"]'
 
 CFLAGS += --emrun
 
