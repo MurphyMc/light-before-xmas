@@ -23,7 +23,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		30361DC01D9A224D00A33B99 /* Project-iOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Project-iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		30361DC01D9A224D00A33B99 /* Light-Before-Xmas.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Light-Before-Xmas.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		30361DC31D9A224D00A33B99 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		30361DC91D9A224D00A33B99 /* GameViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameViewController.swift; sourceTree = "<group>"; };
 		30361DCC1D9A224D00A33B99 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
@@ -69,7 +69,7 @@
 		30361DC11D9A224D00A33B99 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				30361DC01D9A224D00A33B99 /* Project-iOS.app */,
+				30361DC01D9A224D00A33B99 /* Light-Before-Xmas.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -115,9 +115,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		30361DBF1D9A224D00A33B99 /* Project-iOS */ = {
+		30361DBF1D9A224D00A33B99 /* Light-Before-Xmas */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 30361DD61D9A224D00A33B99 /* Build configuration list for PBXNativeTarget "Project-iOS" */;
+			buildConfigurationList = 30361DD61D9A224D00A33B99 /* Build configuration list for PBXNativeTarget "Light-Before-Xmas" */;
 			buildPhases = (
 				30361E841D9B4C7B00A33B99 /* Compile Rogue */,
 				30361DBC1D9A224D00A33B99 /* Sources */,
@@ -128,9 +128,9 @@
 			);
 			dependencies = (
 			);
-			name = "Project-iOS";
+			name = "Light-Before-Xmas";
 			productName = "Project-iOS";
-			productReference = 30361DC01D9A224D00A33B99 /* Project-iOS.app */;
+			productReference = 30361DC01D9A224D00A33B99 /* Light-Before-Xmas.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -145,6 +145,7 @@
 				TargetAttributes = {
 					30361DBF1D9A224D00A33B99 = {
 						CreatedOnToolsVersion = 8.0;
+						DevelopmentTeam = AFP6SAXN8A;
 						LastSwiftMigration = 0930;
 						ProvisioningStyle = Automatic;
 					};
@@ -155,6 +156,7 @@
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
 			knownRegions = (
+				English,
 				en,
 				Base,
 			);
@@ -163,7 +165,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				30361DBF1D9A224D00A33B99 /* Project-iOS */,
+				30361DBF1D9A224D00A33B99 /* Light-Before-Xmas */,
 			);
 		};
 /* End PBXProject section */
@@ -352,10 +354,10 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = AFP6SAXN8A;
 				INFOPLIST_FILE = "Project-iOS/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = "org.plasmacore.Project-iOS";
+				PRODUCT_BUNDLE_IDENTIFIER = com.runegate.lightbeforexmas;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "Project-iOS-Bridging-Header.h";
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "Project-iOS-Swift.h";
@@ -363,6 +365,7 @@
 				SWIFT_PRECOMPILE_BRIDGING_HEADER = YES;
 				SWIFT_SWIFT3_OBJC_INFERENCE = Default;
 				SWIFT_VERSION = 4.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
@@ -371,16 +374,17 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = AFP6SAXN8A;
 				INFOPLIST_FILE = "Project-iOS/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = "org.plasmacore.Project-iOS";
+				PRODUCT_BUNDLE_IDENTIFIER = com.runegate.lightbeforexmas;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "Project-iOS-Bridging-Header.h";
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "Project-iOS-Swift.h";
 				SWIFT_PRECOMPILE_BRIDGING_HEADER = YES;
 				SWIFT_SWIFT3_OBJC_INFERENCE = Default;
 				SWIFT_VERSION = 4.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
@@ -396,7 +400,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		30361DD61D9A224D00A33B99 /* Build configuration list for PBXNativeTarget "Project-iOS" */ = {
+		30361DD61D9A224D00A33B99 /* Build configuration list for PBXNativeTarget "Light-Before-Xmas" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				30361DD71D9A224D00A33B99 /* Debug */,

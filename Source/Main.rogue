@@ -999,7 +999,7 @@ endIf
           elseIf (y.abs * .66 > x.abs) x = y
 
           if (x == y and y == 0)
-            if (e.is_press_right)
+            if (e.is_release_right)
               x = -1
               y = -1
             endIf
@@ -1014,7 +1014,7 @@ endIf
             if (not e.is_press_left) x *= -1
             if (Keyboard.is_shift_pressed and x == 0) x = -1
             local pos = last_position * .8 + e.position * .2
-            tree.click(pos, x < 0)
+            tree.click(pos, x > 0)
           endIf
         endIf
       endIf
