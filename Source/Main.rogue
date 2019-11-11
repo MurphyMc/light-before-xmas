@@ -1732,10 +1732,10 @@ class Music [singleton]
       #dir = File(dir.absolute_filepath, "sounds")
       #dir = File(dir.absolute_filepath, "music")
       local files = [
-        "music/dance-of-the-sugar-plum-faries.mp3",
-        "music/jingle-bells-slow-mix.mp3",
-        "music/oh-christmas-tree.mp3",
-        "music/silent-night.mp3" ] : String[]
+        "music/dance-of-the-sugar-plum-faries",
+        "music/jingle-bells-slow-mix",
+        "music/oh-christmas-tree",
+        "music/silent-night" ] : String[]
 
       forEach (entry in files) #dir.directory_listing)
         #tracks.add(Sound("music/" + entry))
