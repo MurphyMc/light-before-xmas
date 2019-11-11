@@ -1141,7 +1141,7 @@ class Flake
     sway_offset2 = Random.real64(0, .5) : Real64
   METHODS
     method t->Real64
-      return (running_ms - start_ms) / 1000.0
+      return System.time - start_ms / 1000.0
     method init
       while (rotation.value.abs < 8)
         rotation = Degrees(Random.real64(-10, 25))
@@ -1413,7 +1413,7 @@ class Tile
       @lit = v
 
     method rotation->Degrees
-      if (!rotating) return Degrees(@rotation)
+      if (not rotating) return Degrees(@rotation)
 
       return Degrees(cur_rot)
 
@@ -1538,7 +1538,7 @@ class Tile
       local img = TileImages.imgs[index]
       local finish = rotating : Logical
       img.rotation = rotation
-      finish = finish and !rotating
+      finish = finish and not rotating
       local sx = img.size.x : Int32
       local sy = img.size.y : Int32
       local alpha = 255 : Int32
@@ -1759,10 +1759,10 @@ class Music [singleton]
         names.add(names[o])
         tracks.add(tracks[o])
       endForEach
-      forEach (o in order)
+      loop (order.count)
         names.remove_at(0)
         tracks.remove_at(0)
-      endForEach
+      endLoop
 
     method toggle_pause
       paused = not paused
@@ -2151,7 +2151,7 @@ class SimpleSpriteAnimation : Drawable
       local p : Real64
 
       if (stopped)
-        if (!persist) return false
+        if (not persist) return false
         p = 1
       else
         p = getP
