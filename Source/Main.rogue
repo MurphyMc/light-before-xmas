@@ -147,7 +147,7 @@ class MainMenu : ScreenState<<GameScreen>>, MenuHost, MyScreen [singleton]
       Music
 
     method on_start
-      menu.offset = Display.at(0.5,0) - XY(512,0)
+      menu.offset = Display.center - XY(512,384)
 
     #method on_resume
       #menu.current_offset = Display.at(0.5,0)
@@ -321,7 +321,7 @@ class OptionsMenu : ScreenState<<GameScreen>>, MenuHost, MyScreen [singleton]
       menu.add(MenuSpacer(60))
 
     method on_start
-      menu.offset = Display.at(0.5,0) - XY(512,0)
+      menu.offset = Display.center - XY(512,384)
       #menu.current_offset = XY.zero
       #menu.fly_in_right
 
@@ -390,7 +390,7 @@ class PauseMenu : ScreenState<<GameScreen>>, MenuHost, MyScreen [singleton]
       menu.add(MenuButton("Turn Sound Off"))
 
     method on_start
-      menu.offset = Display.at(0.5,0) - XY(512,0)
+      menu.offset = Display.center - XY(512,384)
 
     method on_update
       Music.tick
@@ -2217,6 +2217,7 @@ endRoutine
 class Graphics [singleton]
   METHODS
     method draw_background
+      Display.clear( Color.BLACK )
       Display.clear_scale
       TreeGame.bg.scale_to_fill( Display.bounds )
       TreeGame.bg.draw
