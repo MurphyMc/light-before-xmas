@@ -13,12 +13,12 @@ class Launch : Screen
   METHODS
     method init
       #Display.scale_to_fit(1024,768)
-      MainMenu
-      TreeGame
 
     method on_update
       ticks--
       if (ticks == 0)
+        MainMenu
+        TreeGame
         TransitionTo( GameScreen(), 0.5 )
       endIf
 endClass
@@ -45,7 +45,9 @@ endClass
 class CreditsMenu : BaseMenuState [singleton]
   METHODS
     method init
-      menu = Menu(Corners(0,180,Display.size.x,Display.size.y - 40))
+      Graphics.scale_to_fit( Anchor.CENTER )
+      #menu = Menu(Corners(0,180,Display.size.x,Display.size.y - 40))
+      menu = Menu( Box(Display.bounds.center.x,180,0,768-(180+40)) )
       menu.target = this
       menu.add(MenuImage("title_credits.png"))
       menu.add(MenuSpacer(40))
@@ -72,12 +74,10 @@ class BaseMenuState : ScreenState<<GameScreen>>, MyScreen, MenuHost
   METHODS
     method on_resume
       menu.offset = XY.zero
-      #menu.current_offset = Display.at(0.5,0)  # FIXME
       #menu.fly_in_right
 
     method on_start
       menu.offset = XY.zero
-      #menu.current_offset = Display.at(0.5,0)  # FIXME
       #menu.fly_in_right
 
     method on_update
@@ -134,7 +134,8 @@ class MainMenu : ScreenState<<GameScreen>>, MenuHost, MyScreen [singleton]
   METHODS
     method init
       #menu = Menu(Box(XY(Display.size.x/2,450),XY(0,748-450)))
-      menu = Menu(Box(XY(Display.size.x/2,160),XY(0,748-160-20)))
+      Graphics.scale_to_fit( Anchor.CENTER )
+      menu = Menu(Box(XY(Display.bounds.center.x,160),XY(0,748-160-20)))
       menu.target = this
       menu.add(MenuImage("main_title.png"))
       menu.add(MenuSpacer(40))
@@ -146,7 +147,7 @@ class MainMenu : ScreenState<<GameScreen>>, MenuHost, MyScreen [singleton]
       Music
 
     method on_start
-      menu.offset = Display.at(0.5,0)
+      menu.offset = Display.at(0.5,0) - XY(512,0)
 
     #method on_resume
       #menu.current_offset = Display.at(0.5,0)
@@ -307,7 +308,9 @@ class OptionsMenu : ScreenState<<GameScreen>>, MenuHost, MyScreen [singleton]
 
   METHODS
     method init
-      menu = Menu(Corners(0,180,Display.size.x,Display.size.y - 40)) # XY(Display.size.x/2,500),XY(0,748-500)))
+      Graphics.scale_to_fit( Anchor.CENTER )
+      menu = Menu( Box(Display.bounds.center.x,180,0,768-(180+40)) )
+      #menu = Menu(Corners(0,180,Display.bounds.center.x,Display.size.y - 40)) # XY(Display.size.x/2,500),XY(0,748-500)))
       menu.target = this
       menu.add(MenuImage("title_options.png"))
       menu.add(MenuSpacer(40))
@@ -318,7 +321,7 @@ class OptionsMenu : ScreenState<<GameScreen>>, MenuHost, MyScreen [singleton]
       menu.add(MenuSpacer(60))
 
     method on_start
-      menu.offset = XY.zero
+      menu.offset = Display.at(0.5,0) - XY(512,0)
       #menu.current_offset = XY.zero
       #menu.fly_in_right
 
@@ -373,8 +376,9 @@ class PauseMenu : ScreenState<<GameScreen>>, MenuHost, MyScreen [singleton]
     countdown : Int32
   METHODS
     method init
+      Graphics.scale_to_fit( Anchor.CENTER )
+      menu = Menu( Box(Display.bounds.center.x,180,0,768-(180+40)) )
       #menu = Menu(Box(XY(Display.size.x/2,350),XY(0,748-350)))
-      menu = Menu(Corners(0,180,Display.size.x,Display.size.y - 40))
       menu.target = this
       menu.add(MenuImage("title_paused.png"))
       menu.add(MenuSpacer(30))
@@ -386,7 +390,7 @@ class PauseMenu : ScreenState<<GameScreen>>, MenuHost, MyScreen [singleton]
       menu.add(MenuButton("Turn Sound Off"))
 
     method on_start
-      menu.offset = XY.zero
+      menu.offset = Display.at(0.5,0) - XY(512,0)
 
     method on_update
       Music.tick
@@ -974,7 +978,7 @@ endIf
         if (e.position.x < 85 and e.position.y < 85)
           MenuManager.on_select.play
           tree.pause
-          TransitionToPushState( PauseMenu, TRANSITION_TIME, &exit_vector=XY(0,1) ) # FIXME
+          TransitionToPushState( PauseMenu, TRANSITION_TIME, &exit_vector=XY(0,1) )
         endIf
         last_button = e.index
         last_position = e.position
@@ -1560,7 +1564,7 @@ class Tile
         TileImages.bulb.draw(XY(x * sx + tree.draw_pos.x, y * sy + tree.draw_pos.y))
       endIf
 
-      if (finish) #FIXME: only once per frame!
+      if (finish) #FIX: only once per frame!
         tree.relight
       endIf
 
