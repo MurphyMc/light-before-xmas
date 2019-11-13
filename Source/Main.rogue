@@ -950,7 +950,9 @@ endIf
       Display.clear_scale
 
       timer_font.anchor = Anchor.TOP_RIGHT
-      local pos = Display.at(1, 0) + XY(-6, 1)
+
+      local safe_area = Display.safe_area
+      local pos = safe_area.top_right + XY(-6, 1)
 
       screen.apply_transition_offset
 
@@ -964,9 +966,9 @@ endIf
       button.rotation = Radians(0)
       button.color = Color(0,0,0,192)
       #button.draw(XY(42, 42))
-      button.draw(XY(7, 5))
+      button.draw(safe_area.top_left+XY(7, 5))
       button.color = Color.WHITE
-      button.draw(XY(5, 3))
+      button.draw(safe_area.top_left+XY(5, 3))
       #button.draw(XY(40, 40))
 
       Graphics.scale_to_fit( Anchor.BOTTOM )
