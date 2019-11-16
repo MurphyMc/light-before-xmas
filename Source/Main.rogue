@@ -29,7 +29,8 @@ class GameScreen : Screen
       if (transition_info)
         local info = transition_info.value
         local progress = info.eased_progress( &invert_ease_in )
-        Display.offset += Display.size * info.exit_vector * progress
+        Display.offset += Display.size * ?:{Display.is_phone:1.37 || 1.0} * info.exit_vector * progress
+        # 1.37 accounts for phone zoom
       endIf
 
     method on_start
@@ -922,18 +923,18 @@ class TreeGame : ScreenState<<GameScreen>>, MyScreen [singleton]
       Graphics.draw_background
       Graphics.scale_to_fill( Anchor.BOTTOM )
       FlakeManager.draw
-      Graphics.scale_to_fit( Anchor.BOTTOM )
+      Graphics.apply_tree_transform( tree )
 
       screen.apply_transition_offset
 
       treepic.draw
       tree.draw
       tree.make_sparks
-if (tree.solved)
-  if (Random.real64 < .1) random_tree_sparkle
-else
-  if (Random.real64 < .001) random_tree_sparkle
-endIf
+      if (tree.solved)
+        if (Random.real64 < .1) random_tree_sparkle
+      else
+        if (Random.real64 < .001) random_tree_sparkle
+      endIf
       tree_sparkles.draw
       sparks.draw
 
@@ -971,13 +972,14 @@ endIf
       button.draw(safe_area.top_left+XY(5, 3))
       #button.draw(XY(40, 40))
 
-      Graphics.scale_to_fit( Anchor.BOTTOM )
+      Graphics.apply_tree_transform( tree )
       # Leave this transform in place to handle input events between updates
 
 
     method on(e : PointerEvent)
       if (e.is_press)
-        if (e.position.x < 85 and e.position.y < 85)
+        local abs_pos = (e.position + Display.offset) / Display.scale
+        if (abs_pos.x < flake_button.size.x and abs_pos.y < flake_button.size.y)
           MenuManager.on_select.play
           tree.pause
           TransitionToPushState( PauseMenu, TRANSITION_TIME, &exit_vector=XY(0,1) )
@@ -1163,6 +1165,8 @@ class Tree
 
     pause_start = -1 : Int64
 
+    zoom = EasedValue<<Real64>>( 0, 2 )
+
     t : Tile[][]
 
   METHODS
@@ -1178,11 +1182,13 @@ class Tree
       started_ms += (running_ms - pause_start)
 
       pause_start = -1
+
     method set_solved (v : Logical)
       @solved = v
       if (v)
         solved_ms = running_ms
         SFX.jingle.play
+        zoom.target_value = 0
       endIf
 
     method pad (n : Int64)->String
@@ -1254,6 +1260,7 @@ class Tree
       randomize
 
       relight
+      zoom.target_value = 1.0
 
     method reset
       local tiles = Tile[]
@@ -1285,19 +1292,18 @@ class Tree
       tile.rotate(alternate)
 
     method randomize
-      local rots = (0..3)->Int32[]
       forEach (r in t)
         forEach (c in r)
           if (c is not source)
             if (not Keyboard.is_shift_pressed)
-              c.value = c.ror(c.value, rots.random())
+              c.value = c.ror(c.value, Random.int32(0,3))
             endIf
           endIf
         endForEach
       endForEach
       if (Keyboard.is_shift_pressed)
         local c = t[0][0]
-        c.value = c.ror(c.value, 1) #rots.random())
+        c.value = c.ror(c.value, 1)
       endIf
 
     method lit_and_unlit_sets (unlight = false : Logical)->LitSets
@@ -2216,6 +2222,15 @@ endRoutine
 
 class Graphics [singleton]
   METHODS
+    method apply_tree_transform( tree:Tree )
+      if (Display.is_phone)
+        local h = 768 + ((560-768) * tree.zoom.value)
+        Display.scale_to_fit( 1024, h, Anchor.BOTTOM )
+        Display.offset -= XY(0,156*tree.zoom.value)
+      else
+        Display.scale_to_fit( 1024, 768, Anchor.BOTTOM )
+      endIf
+
     method draw_background
       Display.clear( Color.BLACK )
       Display.clear_scale
@@ -2228,3 +2243,13 @@ class Graphics [singleton]
     method scale_to_fit( anchor:Anchor )
       Display.scale_to_fit( 1024, 768, anchor )
 endClass
+
+augment Display
+  METHODS
+    method is_phone->Logical
+      #if (not (System.is_ios or System.is_android)) return false  # FIXME
+      local aspect_ratio = Display.true_size.max / Display.true_size.min
+      if (System.is_ios) return (aspect_ratio >= 1.5)  # original iPhone size
+      return (aspect_ratio > 1.5)  # Pixel Slate has a 1.5 aspect ratio
+endAugment
+
