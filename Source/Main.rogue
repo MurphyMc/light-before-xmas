@@ -957,13 +957,14 @@ class TreeGame : ScreenState<<GameScreen>>, MyScreen [singleton]
 
       screen.apply_transition_offset
 
+      timer_font.scale = Display.density
       timer_font.color = Color.BLACK
       timer_font.draw(tree.time_string, pos + XY(2,2))
       timer_font.color = Color.WHITE
       timer_font.draw(tree.time_string, pos)
 
       local button = flake_button
-      button.scale = 1
+      button.scale = Display.density
       button.rotation = Radians(0)
       button.color = Color(0,0,0,192)
       #button.draw(XY(42, 42))
@@ -978,7 +979,7 @@ class TreeGame : ScreenState<<GameScreen>>, MyScreen [singleton]
 
     method on(e : PointerEvent)
       if (e.is_press)
-        local abs_pos = (e.position + Display.offset) / Display.scale
+        local abs_pos = e.position - Display.safe_area.position
         if (abs_pos.x < flake_button.size.x and abs_pos.y < flake_button.size.y)
           MenuManager.on_select.play
           tree.pause
