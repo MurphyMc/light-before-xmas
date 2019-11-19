@@ -849,7 +849,7 @@ class TreeGame : ScreenState<<GameScreen>>, MyScreen [singleton]
       s.setup_scale(0, 1.5, SimpleSpriteAnimation.OSCILLATE_SIN_SHARP)
       s.setup_fade(0, 1, SimpleSpriteAnimation.OSCILLATE_SIN)
 
-      p = bg.size / tree_sparkle_map.size * p
+      p = XY(1024,768) / tree_sparkle_map.size * p
       s.setup_position(p)
 
       star_sparkles.add(s)
@@ -873,7 +873,7 @@ class TreeGame : ScreenState<<GameScreen>>, MyScreen [singleton]
       s.setup_scale(0, 1.5, SimpleSpriteAnimation.OSCILLATE_SIN_SHARP)
       s.setup_fade(0, 1, SimpleSpriteAnimation.OSCILLATE_SIN)
 
-      p = bg.size / tree_sparkle_map.size * p
+      p = XY(1024,768) / tree_sparkle_map.size * p
       s.setup_position(p)
 
       tree_sparkles.add(s)
