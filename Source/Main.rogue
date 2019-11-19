@@ -839,7 +839,7 @@ class TreeGame : ScreenState<<GameScreen>>, MyScreen [singleton]
 
     method random_star_sparkle
       local p = random_on_map(star_sparkle_map)
-      TreeGame.spark.color = HSB(.1666, Random.real64(0,1), 1)->Color
+      TreeGame.spark.color = HSB(360*.1666, Random.real64(0,1), 1)->Color
 
       local s = SimpleSpriteAnimation(TreeGame.spark, 900)
 
@@ -864,7 +864,7 @@ class TreeGame : ScreenState<<GameScreen>>, MyScreen [singleton]
 
     method random_tree_sparkle
       local p = random_on_map(tree_sparkle_map)
-      TreeGame.spark.color = HSB(Random.real64, Random.real64(.5,.8), Random.real64(.8,1))->Color
+      TreeGame.spark.color = HSB(360*Random.real64, Random.real64(.5,.8), Random.real64(.8,1))->Color
       local s = OverexposedSimpleSpriteAnimation(TreeGame.spark, 900)
 
       local d = Random.real64(40, 90)
@@ -1565,10 +1565,10 @@ class Tile
         #endIf
       img.draw( XY(x * sx + tree.draw_pos.x, y * sy + tree.draw_pos.y) )
       if  (index == 0 and this is not tree.source)
-        TileImages.bulb.color = HSB(hue, sat1, .25 + .75 * cur_lit)->Color
+        TileImages.bulb.color = HSB(360*hue, sat1, .25 + .75 * cur_lit)->Color
         TileImages.bulb.render_mode = RenderMode.ALPHA_IMAGE
         TileImages.bulb.draw(XY(x * sx + tree.draw_pos.x, y * sy + tree.draw_pos.y))
-        TileImages.bulb.color = HSB(hue+hue_var, sat2, .5 * cur_lit)->Color
+        TileImages.bulb.color = HSB(360*hue+hue_var, sat2, .5 * cur_lit)->Color
         TileImages.bulb.render_mode = RenderMode.ADDITIVE_IMAGE
         TileImages.bulb.draw(XY(x * sx + tree.draw_pos.x, y * sy + tree.draw_pos.y))
       endIf
@@ -2248,7 +2248,7 @@ endClass
 augment Display
   METHODS
     method is_phone->Logical
-      #if (not (System.is_ios or System.is_android)) return false  # FIXME
+      if (not (System.is_ios or System.is_android)) return false
       local aspect_ratio = Display.true_size.max / Display.true_size.min
       if (System.is_ios) return (aspect_ratio >= 1.5)  # original iPhone size
       return (aspect_ratio > 1.5)  # Pixel Slate has a 1.5 aspect ratio
