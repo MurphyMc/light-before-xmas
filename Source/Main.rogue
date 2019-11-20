@@ -46,7 +46,7 @@ endClass
 class CreditsMenu : BaseMenuState [singleton]
   METHODS
     method init
-      Graphics.scale_to_fit( Anchor.CENTER )
+      Graphics.scale_to_fit( Anchor.TOP )
       #menu = Menu(Corners(0,180,Display.size.x,Display.size.y - 40))
       menu = Menu( Box(Display.bounds.center.x,180,0,768-(180+40)) )
       menu.target = this
@@ -112,7 +112,7 @@ class BaseMenuState : ScreenState<<GameScreen>>, MyScreen, MenuHost
       Graphics.draw_background
       Graphics.scale_to_fill( Anchor.BOTTOM )
       FlakeManager.draw
-      Graphics.scale_to_fit( Anchor.CENTER )
+      Graphics.scale_to_fit( Anchor.TOP )
       screen.apply_transition_offset
       menu.draw
 
@@ -135,13 +135,13 @@ class MainMenu : ScreenState<<GameScreen>>, MenuHost, MyScreen [singleton]
   METHODS
     method init
       #menu = Menu(Box(XY(Display.size.x/2,450),XY(0,748-450)))
-      Graphics.scale_to_fit( Anchor.CENTER )
-      menu = Menu(Box(XY(Display.bounds.center.x,160),XY(0,748-160-20)))
+      Graphics.scale_to_fit( Anchor.TOP )
+      menu = Menu(Box(XY(Display.bounds.center.x,80),XY(0,748-180-20)))
       menu.target = this
       menu.add(MenuImage("main_title.png"))
       menu.add(MenuSpacer(40))
       menu.add(MenuButton("Start"))
-      menu.add(MenuButton("High Scores"))
+      #menu.add(MenuButton("High Scores"))
       menu.add(MenuButton("Options"))
       menu.add(MenuButton("Credits"))
       TreeGame
@@ -174,7 +174,7 @@ class MainMenu : ScreenState<<GameScreen>>, MenuHost, MyScreen [singleton]
       Graphics.draw_background
       Graphics.scale_to_fill( Anchor.BOTTOM )
       FlakeManager.draw
-      Graphics.scale_to_fit( Anchor.CENTER )
+      Graphics.scale_to_fit( Anchor.TOP )
       screen.apply_transition_offset
       menu.draw
 
@@ -309,7 +309,7 @@ class OptionsMenu : ScreenState<<GameScreen>>, MenuHost, MyScreen [singleton]
 
   METHODS
     method init
-      Graphics.scale_to_fit( Anchor.CENTER )
+      Graphics.scale_to_fit( Anchor.TOP )
       menu = Menu( Box(Display.bounds.center.x,180,0,768-(180+40)) )
       #menu = Menu(Corners(0,180,Display.bounds.center.x,Display.size.y - 40)) # XY(Display.size.x/2,500),XY(0,748-500)))
       menu.target = this
@@ -354,7 +354,7 @@ class OptionsMenu : ScreenState<<GameScreen>>, MenuHost, MyScreen [singleton]
       Graphics.draw_background
       Graphics.scale_to_fill( Anchor.BOTTOM )
       FlakeManager.draw
-      Graphics.scale_to_fit( Anchor.CENTER )
+      Graphics.scale_to_fit( Anchor.TOP )
       screen.apply_transition_offset
       menu.draw
 
@@ -377,7 +377,7 @@ class PauseMenu : ScreenState<<GameScreen>>, MenuHost, MyScreen [singleton]
     countdown : Int32
   METHODS
     method init
-      Graphics.scale_to_fit( Anchor.CENTER )
+      Graphics.scale_to_fit( Anchor.TOP )
       menu = Menu( Box(Display.bounds.center.x,180,0,768-(180+40)) )
       #menu = Menu(Box(XY(Display.size.x/2,350),XY(0,748-350)))
       menu.target = this
@@ -426,7 +426,7 @@ class PauseMenu : ScreenState<<GameScreen>>, MenuHost, MyScreen [singleton]
       Graphics.draw_background
       Graphics.scale_to_fill( Anchor.BOTTOM )
       FlakeManager.draw
-      Graphics.scale_to_fit( Anchor.CENTER )
+      Graphics.scale_to_fit( Anchor.TOP )
 
       screen.apply_transition_offset
       menu.draw
