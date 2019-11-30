@@ -155,7 +155,6 @@ class MainMenu : ScreenState<<GameScreen>>, MenuHost, MyScreen [singleton]
       #menu.fly_in_right
 
     method on_update
-      Music.tick
       menu.update
       if (action is null) return
       countdown--
@@ -361,10 +360,10 @@ class OptionsMenu : ScreenState<<GameScreen>>, MenuHost, MyScreen [singleton]
     method menu_selected (entry : MenuEntry, identifier : Object)
       action = entry
       countdown = 2
-      if (identifier == "Go Back")
+      #if (identifier == "Go Back")
         #menu.fly_out_left
         #countdown = 20
-      endIf
+      #endIf
 
     method on(e : PointerEvent)
       menu.on(e)
@@ -377,9 +376,8 @@ class PauseMenu : ScreenState<<GameScreen>>, MenuHost, MyScreen [singleton]
     countdown : Int32
   METHODS
     method init
-      Graphics.scale_to_fit( Anchor.TOP )
-      menu = Menu( Box(Display.bounds.center.x,180,0,768-(180+40)) )
-      #menu = Menu(Box(XY(Display.size.x/2,350),XY(0,748-350)))
+      Graphics.scale_to_fit( Anchor.CENTER )
+      menu = Menu( Box(Display.bounds.center.x,120,0,768-(180+80)) )
       menu.target = this
       menu.add(MenuImage("title_paused.png"))
       menu.add(MenuSpacer(30))
@@ -426,7 +424,7 @@ class PauseMenu : ScreenState<<GameScreen>>, MenuHost, MyScreen [singleton]
       Graphics.draw_background
       Graphics.scale_to_fill( Anchor.BOTTOM )
       FlakeManager.draw
-      Graphics.scale_to_fit( Anchor.TOP )
+      Graphics.scale_to_fit( Anchor.CENTER )
 
       screen.apply_transition_offset
       menu.draw
@@ -434,10 +432,10 @@ class PauseMenu : ScreenState<<GameScreen>>, MenuHost, MyScreen [singleton]
     method menu_selected (entry : MenuEntry, identifier : Object)
       action = entry
       countdown = 2
-      if (identifier == "Resume" or identifier == "New Game" or identifier == "Main Menu")
+      #if (identifier == "Resume" or identifier == "New Game" or identifier == "Main Menu")
         #menu.fly_out_bottom
         #countdown = 20
-      endIf
+      #endIf
 
     method on(e : PointerEvent)
       menu.on(e)
@@ -794,7 +792,7 @@ class TreeGame : ScreenState<<GameScreen>>, MyScreen [singleton]
     ticks : Int32
     bg = Image("new_bg.jpg").[ anchor=Anchor.TOP_LEFT ]
     treepic = Image("new_tree_base.png")
-    starpic = Image("new_tree_star_glow_white_380.png").[ anchor=Anchor.TOP_LEFT ]
+    starpic = Image("star_2019.png").[ anchor=Anchor.TOP_LEFT ]
     tree_sparkle_map = Bitmap(Plasmacore.data_file("tree_sparkle_map.png"))
     star_sparkle_map = Bitmap(Plasmacore.data_file("star_sparkle_map.png"))
     sparks   = MultiDrawable()
@@ -822,7 +820,6 @@ class TreeGame : ScreenState<<GameScreen>>, MyScreen [singleton]
       SFX # cache SFX
       FlakeManager
       Display.background_color = Color(0,0,0)
-      Music.tick
       #Display.background_color = Color(255,255,255)
 
 
@@ -879,6 +876,7 @@ class TreeGame : ScreenState<<GameScreen>>, MyScreen [singleton]
       tree_sparkles.add(s)
 
     method on_start
+      Music.tick
       tree = Tree(17)
       tree.resume
       last_slow_timer = running_ms
@@ -944,7 +942,7 @@ class TreeGame : ScreenState<<GameScreen>>, MyScreen [singleton]
         local p = (running_ms - tree.solved_ms) / 400.0 : Real64
         if (p > 1) p = 1
         starpic.color = Color(255,255,255,255*p)
-        starpic.draw(XY(380,0))
+        starpic.draw(XY(380,-54))
         star_sparkles.draw
       endIf
 
@@ -1752,7 +1750,7 @@ class Music [singleton]
 
       forEach (entry in files) #dir.directory_listing)
         #tracks.add(Sound("music/" + entry))
-        tracks.add(Sound(entry))
+        tracks.add(Sound(entry,&is_music))
         local words = entry.replacing("-", " ").before_last('.').split(' ')
         local n = StringBuilder()
         forEach (word in words)
