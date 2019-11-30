@@ -1126,6 +1126,8 @@ augment Global
       return Radians(r).sin
     method running_ms->Int64
       return Int64(System.time*1000) + time_offset
+    method time_ms->Int64
+      return Int64(System.time*1000)
 endAugment
 
 class FlakeManager [singleton]
@@ -1147,7 +1149,7 @@ class FlakeManager [singleton]
       endForEach
 
       flakes.add(Flake())
-      next_add = running_ms + Random.int32(add_delay_min, add_delay_max)
+      next_add = time_ms + Random.int32(add_delay_min, add_delay_max)
 
     method draw
       forEach (i in 0..flakes.count-1)
@@ -1171,8 +1173,8 @@ class FlakeManager [singleton]
       endForEach
 
       if (flakes.count < num_flakes)
-        if (next_add <= running_ms)
-          next_add = running_ms + Random.int32(add_delay_min, add_delay_max)
+        if (next_add <= time_ms)
+          next_add = time_ms + Random.int32(add_delay_min, add_delay_max)
           flakes.add(Flake())
         endIf
       endIf
@@ -1186,7 +1188,7 @@ class Flake
     image = FlakeManager.images.random() : Image
     vel = XY(Random.real64(5, 15), Random.real64(10, 25))
     color = Color(255,255,255,Random.real64(.7,1) * 255)
-    start_ms = running_ms : Int64
+    start_ms = time_ms : Real64
 
     sway_amount = Random.real64(5, 15) : Real64
     sway_period = Random.real64(4, 6) : Real64
@@ -1197,7 +1199,7 @@ class Flake
     sway_offset2 = Random.real64(0, .5) : Real64
   METHODS
     method t->Real64
-      return System.time - start_ms / 1000.0
+      return (time_ms - start_ms) / 1000.0
     method init
       while (rotation.value.abs < 8)
         rotation = Degrees(Random.real64(-10, 25))
