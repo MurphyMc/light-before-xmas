@@ -46,15 +46,39 @@ endClass
 class CreditsMenu : BaseMenuState [singleton]
   METHODS
     method init
-      Graphics.scale_to_fit( Anchor.TOP )
+      Graphics.scale_to_fit( Anchor.CENTER )
       #menu = Menu(Corners(0,180,Display.size.x,Display.size.y - 40))
-      menu = Menu( Box(Display.bounds.center.x,180,0,768-(180+40)) )
+      menu = Menu( Box(Display.bounds.center.x,0,0,768) )
       menu.target = this
       menu.add(MenuImage("title_credits.png"))
-      menu.add(MenuSpacer(40))
-      menu.add(MenuSpacer(20))
+      menu.add(MenuSpacer(XY(0,20)))
+
+      menu.add( MenuText("The Light Before Xmas v1.0") )
+      menu.add( MenuText("Copyright 2010, 2019 by Murphy McCauley") )
+      menu.add( MenuText("Developed by Murphy McCauley in 2010") )
+      menu.add( MenuText("Updated by Abe Pralle and Murphy McCauley in 2019") )
+      menu.add( MenuText("With thanks to several inspirational Flash games") )
+      menu.add(MenuSpacer(XY(0,20)))
+
+      menu.add( MenuText("Full source code ") )
+      menu.add( MenuText("github.com/MurphyMc/light-before-xmas") )
+      menu.add(MenuSpacer(XY(0,20)))
+
+      menu.add( MenuText("Wonderful music by Kevin MacLeod (incompetech.com)") )
+      menu.add( MenuText("Available under Creative Commons: By Attribution 2.0 and 4.0.") )
+      menu.add(MenuSpacer(XY(0,20)))
+
+      menu.add( MenuText(''"Dance of the Sugar Plum Fairies"'') )
+      menu.add( MenuText(''"Jingle Bells (Calm)"'') )
+      menu.add( MenuText(''"Silent Night"'') )
+      menu.add( MenuText(''"Oh Christmas Tree"'') )
+      menu.add(MenuSpacer(XY(0,20)))
+
+      menu.add( MenuText("Additional license details on GitHub") )
+      menu.add(MenuSpacer(XY(0,20)))
+
       menu.add(MenuButton("Go Back"))
-      menu.add(MenuSpacer(60))
+      menu.add(MenuSpacer(XY(0,20)))
 
       #method immediate_execute (action : Object)
       #println(".")
@@ -112,7 +136,7 @@ class BaseMenuState : ScreenState<<GameScreen>>, MyScreen, MenuHost
       Graphics.draw_background
       Graphics.scale_to_fill( Anchor.BOTTOM )
       FlakeManager.draw
-      Graphics.scale_to_fit( Anchor.TOP )
+      Graphics.scale_to_fit( Anchor.CENTER )
       screen.apply_transition_offset
       menu.draw
 
@@ -571,6 +595,35 @@ class MenuButton : MenuItem
       target_scale = NORMAL
       locked = true
 endClass
+
+class MenuText : MenuItem
+  PROPERTIES
+    text : String
+
+  METHODS
+    method init (text)
+
+    method identifier->Object
+      return text
+
+    method size->XY
+      return MenuManager.font.measure( text )
+
+    method hitbox->Box
+      return Box( size )
+
+    method draw (position : XY)
+      local font = MenuManager.font
+      local old_anchor = font.anchor
+      font.anchor = Anchor.CENTER
+      font.scale = 1.0
+      font.color = Color.BLACK
+      font.draw(text, position.yv + XY(512,0) + XY(2,2))
+      font.color = Color.WHITE
+      font.draw(text, position.yv + XY(512,0))
+      font.anchor = old_anchor
+endClass
+
 
 class MenuEntry(item:MenuItem)
   PROPERTIES
