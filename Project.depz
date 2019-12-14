@@ -1,3 +1,5 @@
 [REPO Plasmacore]
+default_actions=--init --update --ff --outdated
 prefix=https://github.com/AbePralle
 checkout=master
+
