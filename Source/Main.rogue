@@ -194,6 +194,7 @@ class MainMenu : ScreenState<<GameScreen>>, MenuHost, MyScreen [singleton]
       endIf
 
     method on_draw
+      menu.offset = Display.center - XY(512,384)
       Graphics.draw_background
       Graphics.scale_to_fill( Anchor.BOTTOM )
       FlakeManager.draw
@@ -381,6 +382,7 @@ class OptionsMenu : ScreenState<<GameScreen>>, MenuHost, MyScreen [singleton]
       action = null
 
     method on_draw
+      menu.offset = Display.center - XY(512,384)
       Graphics.draw_background
       Graphics.scale_to_fill( Anchor.BOTTOM )
       FlakeManager.draw
@@ -459,6 +461,7 @@ class PauseMenu : ScreenState<<GameScreen>>, MenuHost, MyScreen [singleton]
       action = null
 
     method on_draw
+      menu.offset = Display.center - XY(512,384)
       Graphics.draw_background
       Graphics.scale_to_fill( Anchor.BOTTOM )
       FlakeManager.draw
