@@ -341,6 +341,7 @@ class OptionsMenu : ScreenState<<GameScreen>>, MenuHost, MyScreen [singleton]
       menu.add(MenuSpacer(20))
       menu.add(MenuButton("Turn Music Off"))
       menu.add(MenuButton("Turn Sound Off"))
+      menu.add(MenuButton("Invert Swipe"))
       menu.add(MenuButton("Go Back"))
       menu.add(MenuSpacer(60))
 
@@ -370,6 +371,12 @@ class OptionsMenu : ScreenState<<GameScreen>>, MenuHost, MyScreen [singleton]
       elseIf (identifier == "Turn Sound Off")
         (action.item as MenuButton).text = "Turn Sound On"
         SFX.enabled = false
+      elseIf (identifier == "Invert Swipe")
+        (action.item as MenuButton).text = "Normal Swipe"
+        TreeGame.invert_swipe = true
+      elseIf (identifier == "Normal Swipe")
+        (action.item as MenuButton).text = "Invert Swipe"
+        TreeGame.invert_swipe = false
       endIf
       action = null
 
@@ -401,7 +408,7 @@ class PauseMenu : ScreenState<<GameScreen>>, MenuHost, MyScreen [singleton]
   METHODS
     method init
       Graphics.scale_to_fit( Anchor.CENTER )
-      menu = Menu( Box(Display.bounds.center.x,120,0,768-(180+80)) )
+      menu = Menu( Box(Display.bounds.center.x,120,0,768-(100+80)) )
       menu.target = this
       menu.add(MenuImage("title_paused.png"))
       menu.add(MenuSpacer(30))
@@ -409,8 +416,9 @@ class PauseMenu : ScreenState<<GameScreen>>, MenuHost, MyScreen [singleton]
       menu.add(MenuButton("New Game"))
       menu.add(MenuButton("Main Menu"))
       menu.add(MenuSpacer(30))
-      menu.add(MenuButton("Turn Music Off"))
-      menu.add(MenuButton("Turn Sound Off"))
+      menu.add(MenuButton(select{Music.paused:"Turn Music On"||"Turn Music Off"}))
+      menu.add(MenuButton(select{SFX.enabled:"Turn Sound Off"||"Turn Sound On"}))
+      menu.add(MenuButton(select{TreeGame.invert_swipe:"Normal Swipe"||"Invert Swipe"}))
 
     method on_start
       menu.offset = Display.center - XY(512,384)
@@ -441,6 +449,12 @@ class PauseMenu : ScreenState<<GameScreen>>, MenuHost, MyScreen [singleton]
       elseIf (identifier == "Turn Sound Off")
         (action.item as MenuButton).text = "Turn Sound On"
         SFX.enabled = false
+      elseIf (identifier == "Invert Swipe")
+        (action.item as MenuButton).text = "Normal Swipe"
+        TreeGame.invert_swipe = true
+      elseIf (identifier == "Normal Swipe")
+        (action.item as MenuButton).text = "Invert Swipe"
+        TreeGame.invert_swipe = false
       endIf
       action = null
 
@@ -838,6 +852,9 @@ class Menu
 endClass
 
 class TreeGame : ScreenState<<GameScreen>>, MyScreen [singleton]
+  GLOBAL PROPERTIES
+    invert_swipe = false
+
   PROPERTIES
     flake_button = Image("flake_button.png").[ anchor=Anchor.TOP_LEFT ]
     spark = Image("twinkle.png")
@@ -1071,7 +1088,7 @@ class TreeGame : ScreenState<<GameScreen>>, MyScreen [singleton]
           if (x == -1 and y == 1) y = -1
 
           if (x == y)
-            if (not e.is_press_left) x *= -1
+            if (invert_swipe xor not e.is_press_left) x *= -1
             if (Keyboard.is_shift_pressed and x == 0) x = -1
             local pos = last_position * .8 + e.position * .2
             tree.click(pos, x > 0)
