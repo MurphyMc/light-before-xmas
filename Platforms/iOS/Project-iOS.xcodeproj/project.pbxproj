@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		301A9A4A23AC9FCC0000AE71 /* LaunchScreen.png in Resources */ = {isa = PBXBuildFile; fileRef = 301A9A4923AC9FCC0000AE71 /* LaunchScreen.png */; };
 		30361DC41D9A224D00A33B99 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30361DC31D9A224D00A33B99 /* AppDelegate.swift */; };
 		30361DCA1D9A224D00A33B99 /* GameViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30361DC91D9A224D00A33B99 /* GameViewController.swift */; };
 		30361DCD1D9A224D00A33B99 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 30361DCB1D9A224D00A33B99 /* Main.storyboard */; };
@@ -23,6 +24,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		301A9A4923AC9FCC0000AE71 /* LaunchScreen.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = LaunchScreen.png; path = ../../../Assets/SplashScreen/LaunchScreen.png; sourceTree = "<group>"; };
 		30361DC01D9A224D00A33B99 /* Light-Before-Xmas.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Light-Before-Xmas.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		30361DC31D9A224D00A33B99 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		30361DC91D9A224D00A33B99 /* GameViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameViewController.swift; sourceTree = "<group>"; };
@@ -77,6 +79,7 @@
 		30361DC21D9A224D00A33B99 /* Project-iOS */ = {
 			isa = PBXGroup;
 			children = (
+				301A9A4923AC9FCC0000AE71 /* LaunchScreen.png */,
 				30361E851D9B507000A33B99 /* Assets */,
 				30361DC31D9A224D00A33B99 /* AppDelegate.swift */,
 				30361DC91D9A224D00A33B99 /* GameViewController.swift */,
@@ -175,6 +178,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				30361DCD1D9A224D00A33B99 /* Main.storyboard in Resources */,
+				301A9A4A23AC9FCC0000AE71 /* LaunchScreen.png in Resources */,
 				30361E861D9B507000A33B99 /* Assets in Resources */,
 				30361DCF1D9A224D00A33B99 /* Assets.xcassets in Resources */,
 				30361DD21D9A224D00A33B99 /* LaunchScreen.storyboard in Resources */,
