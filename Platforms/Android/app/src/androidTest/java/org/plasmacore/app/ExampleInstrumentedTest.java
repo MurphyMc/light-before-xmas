@@ -1,4 +1,4 @@
-package org.plasmacore.app;
+package com.runegate.lightbeforexmas;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;
@@ -23,6 +23,6 @@ public class ExampleInstrumentedTest
     // Context of the app under test.
     Context appContext = InstrumentationRegistry.getTargetContext();
 
-    assertEquals("org.plasmacore.app", appContext.getPackageName());
+    assertEquals("com.runegate.lightbeforexmas", appContext.getPackageName());
   }
 }
