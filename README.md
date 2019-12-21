@@ -6,6 +6,25 @@ Electricity starts at the base of the tree, and flows through connected wire seg
 
 Clicking on wires or bulbs will rotate them.  If you have a touch screen you can also "flick" them in either direction.
 
+# Building
+
+## Setup
+To build The Light Before Xmas, install [Rogue](https://github.com/AbePralle/Rogue) and [depz](https://github.com/MurphyMc/depz), then run one of the commands below in the repo.
+
+## Building
+
+### macOS
+Run `rogo macos` on a Mac and then open `Platforms/macOS/Project-macOS.xcworkspace` in Xcode.
+
+### ios
+Run `rogo ios` on a Mac and then open `Platforms/iOS/Project-iOS.xcodeproj` in Xcode.
+
+### Linux
+Run `rogo linux` on Ubuntu (and possibly other Linux distributions) and then run `Build/Linux/light-before-xmas`.
+
+### Web
+Run `rogo web run`.
+
 
 # About
 
