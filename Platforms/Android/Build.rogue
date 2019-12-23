@@ -47,6 +47,41 @@
 description( "default", "The default action is performed when no other actions are specified. Use 'rogo default' to explicitly perform the default option." )
 description( "help",    "Displays a list of all actions that can be performed by Rogo." )
 
+class Keystore [singleton]
+  # Create a BuildLocal.rogue file with:
+  #   augment Keystore
+  #     METHODS
+  #       method init
+  #         keystore_filepath = "<Keystore filepath>"
+  #         keystore_password = "<Keystore password>"
+  #         key_alias         = "<key alias>"
+  #         key_password      = "<key password>"
+  #   endAugment
+  PROPERTIES
+    keystore_filepath : String
+    keystore_password : String
+    key_alias         = "appsign"
+    key_password      : String
+
+  METHODS
+    method init
+      if (not keystore_filepath)
+        local mesg = @|Create Platforms/Android/BuildLocal.rogue containing the following:
+                      |
+                      |augment Keystore
+                      |  METHODS
+                      |    method init
+                      |      keystore_filepath = "<Keystore filepath>"
+                      |      keystore_password = "<Keystore password>"
+                      |      key_alias         = "<key alias>"
+                      |      key_password      = "<key password>"
+                      |endAugment
+                      |
+                      |Ensure that BuildLocal.rogue is in your .gitignore.
+        throw mesg
+      endIf
+endClass
+
 routine rogo_default
   rogo_help
 endRoutine
@@ -55,16 +90,18 @@ routine esc( filepath:String )->String
   return File.shell_escaped( filepath )
 endRoutine
 
-routine rogo_build
+routine rogo_build_debug
   configure_local_properties
   execute "gradle assembleDebug"
 endRoutine
 
+routine rogo_build_release
+  configure_local_properties
+  execute "gradle assembleRelease"
+endRoutine
+
 routine rogo_debug
-  rogo_build
-  if (not Process.run("aapt v",&inherit_environment).success)
-    throw Error( "You must install the Android command line tool 'aapt' and add it to your path." )
-  endIf
+  rogo_build_debug
   if (not Process.run("adb version",&inherit_environment).success)
     throw Error( "You must install the Android command line tool 'adb' and add it to your path." )
   endIf
@@ -119,6 +156,30 @@ routine rogo_debug
     endForEach
     System.sleep( 0.1 )
   endWhile
+
+endRoutine
+
+routine rogo_release
+  #rogo_build_release  # FIXME
+  if (not Process.run("aapt v",&inherit_environment).success)
+    throw Error( "You must install the Android command line tool 'aapt' and add it to your path." )
+  endIf
+
+  local result = Process.run( "aapt dump badging app/build/outputs/apk/release/app-release-unsigned.apk", &env )
+  require result.success
+  local strings = result->String.extract_strings( "* name='$' versionCode='$' versionName='$'*application-label:'$'*" )
+  trace strings
+  #{
+  local package = String(File("app/build.gradle")).extract_string(''*\napplicationId "$"\n*'')
+  local apk_filepath = "app/build/outputs/apk/debug/app-debug.apk"
+
+  uninstall( package )
+  install( apk_filepath )
+
+  local launch_timestamp = "$-$ $" (Date.now.month.format("02"),Date.now.day.format("02"),Date.now->String(&hms,&ms))
+  local launchable_activity = package + ".MainActivity"
+  execute( "adb shell am start -n $/$" (package,launchable_activity) )
+  }#
 
 endRoutine
 
