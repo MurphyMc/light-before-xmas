@@ -12,6 +12,7 @@ class Launch : Screen
 
   METHODS
     method init
+      if (not Display.is_tablet) Display.allow_orientation( &landscape )
       #Display.scale_to_fit(1024,768)
 
     method on_update
