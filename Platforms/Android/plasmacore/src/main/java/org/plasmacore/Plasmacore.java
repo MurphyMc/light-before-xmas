@@ -1,6 +1,7 @@
 package org.plasmacore;
 
 import android.app.Activity;
+import android.content.pm.ActivityInfo;
 import android.graphics.*;
 import android.util.*;
 
@@ -22,6 +23,7 @@ public class Plasmacore
   static public String   mutex = new String( "mutex" );
 
   static public Activity activity;
+  static public Device   device;
 
   static public String   applicationDataFolder;
   static public String   userDataFolder;
@@ -58,6 +60,7 @@ public class Plasmacore
   static public void configure( Activity activity )
   {
     Plasmacore.activity = activity;
+    Plasmacore.device = new Device( activity );
 
     if (isConfigured) return;
     isConfigured = true;
@@ -84,7 +87,8 @@ public class Plasmacore
 
     soundManager = new PlasmacoreSoundManager();
 
-    setMessageListener( "Plasmacore.find_asset",
+    setMessageListener(
+        "Plasmacore.find_asset",
         new PlasmacoreMessageListener()
         {
           public void on( PlasmacoreMessage m )
@@ -112,6 +116,74 @@ public class Plasmacore
             {
               // no response
             }
+          }
+        }
+    );
+
+    setMessageListener(
+        "Display.density",
+        new PlasmacoreMessageListener()
+        {
+          public void on( PlasmacoreMessage m )
+          {
+            m.reply().set( "density", Plasmacore.device.displayDensity() );
+          }
+        }
+    );
+
+    setMessageListener(
+        "Display.is_tablet",
+        new PlasmacoreMessageListener()
+        {
+          public void on( PlasmacoreMessage m )
+          {
+            m.reply().set( "is_tablet", Plasmacore.device.isTablet() );
+          }
+        }
+    );
+
+    final Activity ACTIVITY = activity;
+    setMessageListener(
+        "Display.allow_orientation",
+        new PlasmacoreMessageListener()
+        {
+          public void on( PlasmacoreMessage m )
+          {
+            boolean allow_portrait  = m.getBoolean( "allow_portrait" );
+            boolean allow_landscape = m.getBoolean( "allow_landscape" );
+            int orientation = 0;
+            if (allow_portrait ^ allow_landscape)
+            {
+              if (allow_landscape)
+              {
+                orientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE;
+              }
+              else
+              {
+                orientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT;
+              }
+            }
+            else
+            {
+              orientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE | ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT;
+            }
+            ACTIVITY.setRequestedOrientation( orientation );
+          }
+        }
+    );
+
+    setMessageListener(
+        "Display.safe_insets",
+        new PlasmacoreMessageListener()
+        {
+          public void on( PlasmacoreMessage m )
+          {
+            PlasmacoreMessage reply = m.reply();
+            reply.set( "left",   device.safeInsetLeft() );
+            reply.set( "right",  device.safeInsetRight() );
+            reply.set( "top",    device.safeInsetTop() );
+            reply.set( "bottom", device.safeInsetBottom() );
+            reply.send();
           }
         }
     );
