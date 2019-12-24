@@ -95,7 +95,7 @@ class DataCompiler
 
   METHODS
     method init( file, platform )
-      println "Compiling data for platform $..." (platform)
+      println "Compiling $ data..." (platform)
 
       organize_commands
       execute_global_commands
@@ -104,11 +104,12 @@ class DataCompiler
       # Automatically exclude DataConfig.txt
       included_data.remove( "Assets/Data/DataConfig.txt" )
 
-      local dest_folder = "Build/$/" (platform)
+      local dest_folder = asset_folder( platform, "Data/" )
+      if (not File.is_folder(dest_folder)) File.create_folder( dest_folder )
       forEach (filepath in included_data)
         if (not File.is_folder(filepath))
           local attr = data_attributes( filepath )
-          copy_data( filepath, dest_folder + filepath, attr )
+          copy_data( filepath, dest_folder+filepath.after_first("Data/"), attr )
         endIf
       endForEach
 

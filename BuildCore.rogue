@@ -1,5 +1,6 @@
 uses Geometry
 uses Bitmap
+uses XML
 
 #$ DEPENDENCIES     = Libraries/Rogue/AssetCompiler/*.rogue
 
@@ -31,8 +32,20 @@ routine rogo_default
   rogo_help
 endRoutine
 
+description( "android", "Compiles Rogue files and assets for Android." )
 routine rogo_android
   Build.build( "Android" )
+endRoutine
+
+description( "android_debug", "Compiles Rogue files and assets, then builds, installs, and runs a debug APK." )
+routine rogo_android_debug
+  rogo_android
+  execute "cd Platforms/Android && rogo debug"
+endRoutine
+
+description( "android_keystore", "Creates an Android release keystore." )
+routine rogo_android_keystore
+  execute "cd Platforms/Android && rogo keystore"
 endRoutine
 
 routine rogo_ios
@@ -59,10 +72,71 @@ routine rogo_xclean
   File.delete( ".rogo" )
 endRoutine
 
-routine rogo_version( text="2 Updated to":String, &silent )->String
+routine rogo_version( text="Updated to":String, &silent )->String
   local v = String( File("PlasmacoreVersion.txt") ).trimmed
   if (not silent) print( text ).print( " Plasmacore v" ).println( v )
   return v
+endRoutine
+
+routine rogo_rename_android( new_package_name:String, new_app_name:String )
+  local cur_package_name = String(File("Platforms/Android/app/build.gradle")).extract_string(''*\napplicationId "$"\n*'')
+  local cur_app_name = "Plasmacore"
+  local strings_file = File( "Platforms/Android/app/src/main/res/values/strings.xml" )
+  local strings = XML( strings_file )
+  local resources = strings.find( $.name == "resources" )
+  local name_node : XML
+  if (resources)
+    name_node = resources.find( $.name == "string" and $//name == "app_name" )
+    cur_app_name = name_node.content
+  endIf
+  println "Current package name: " + cur_package_name
+  println "Current app name:     " + cur_app_name
+  if (new_package_name == "" and new_app_name == "")
+    println @|USAGE
+             |  rogo rename android <new_package_name> [<new_app_name]
+    return
+  endIf
+  if (new_package_name == "") new_package_name = cur_package_name
+  if (new_app_name == "") new_app_name = cur_app_name
+
+  println ''Renaming Android project $ "$" -> $ "$"'' (cur_package_name,cur_app_name,new_package_name,new_app_name)
+
+  if (cur_package_name == new_package_name and cur_app_name == new_app_name)
+    println "  (No changes)"
+    return
+  endIf
+
+  name_node.children.clear.add( XML.text(new_app_name) )
+  strings_file.save( strings->String )
+
+  if (cur_package_name == new_package_name) return
+
+  if (not new_package_name.contains('.'))
+    # This is for our convenience but it's a reasonable request
+    throw Error( "New package name must have at least one '.' in it." )
+  endIf
+
+  File.delete( "Platforms/Android/build" )
+  File.delete( "Platforms/Android/app/build" )
+  File.delete( "Platforms/Android/plasmacore/build" )
+
+  local old_folder = "Platforms/Android/app/src/main/java/" + cur_package_name.replacing('.','/')
+  local new_folder = "Platforms/Android/app/src/main/java/" + new_package_name.replacing('.','/')
+  File.create_folder( new_folder )
+  File.sync_from( Files(old_folder,"*"), new_folder, &verbose )
+  File.delete( old_folder )
+
+  # Search and replace cur_package_name with new_package_name
+  println "Changing application id $ -> $" (cur_package_name,new_package_name)
+  forEach (filepath in Files("Platforms/Android", "**"))
+    local content = String( File(filepath) )
+    if (content.contains(cur_package_name))
+      println "  " + filepath
+      content = content.replacing( cur_package_name, new_package_name )
+      File.save( filepath, content )
+    endIf
+  endForEach
+
 endRoutine
 
 routine rogo_update
@@ -73,7 +147,7 @@ routine rogo_update
   if (current_version != update_version)
     println "Plasmacore updating..."
     run File.fix_slashes( "rogo --build=Plasmacore/Bootstrap install update" )
-    println "1 Updated to Plasmacore v" + update_version
+    println "Updated to Plasmacore v" + update_version
   else
     println "No Plasmacore update available. Current version is v$." (current_version)
   endIf
@@ -249,7 +323,11 @@ class Build [essential singleton]
         necessary (File.exists("PlasmacoreVersion.txt"))
         necessary (String(File("Plasmacore/PlasmacoreVersion.txt")) == String(File("PlasmacoreVersion.txt")))
       unsatisfied
-        execute( "depz" )
+        try
+          execute( "depz" )
+        catch (err:Error)
+          execute( "bash -l -c depz" )
+        endTry
       endContingent
 
       local output_folder = File.fix_slashes( "Build/$/Source" (platform) )
