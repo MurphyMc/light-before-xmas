@@ -1,4 +1,5 @@
-OPT_CFLAGS += -O3
+#OPT_CFLAGS += -O3
+OPT_CFLAGS += -O0
 OPT_CFLAGS += -s ASSERTIONS=0 --closure 0
 
 # asm.js wants a multiple of 16 MB
