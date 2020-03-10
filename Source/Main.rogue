@@ -901,7 +901,7 @@ class TreeGame : ScreenState<<GameScreen>>, MyScreen [singleton]
 
     method random_on_map (map : Bitmap)->XY
       while (true)
-        local p = XY(Random.int32(0, map.size.x), Random.int32(0, map.size.y))
+        local p = (Random.xy * map.size).floor
         local pixel = map.get(p.x, p.y).argb : Int32
         if ((pixel & 0xFFffFF) == 0)
           return p
@@ -920,7 +920,7 @@ class TreeGame : ScreenState<<GameScreen>>, MyScreen [singleton]
       s.setup_scale(0, 1.5, SimpleSpriteAnimation.OSCILLATE_SIN_SHARP)
       s.setup_fade(0, 1, SimpleSpriteAnimation.OSCILLATE_SIN)
 
-      p = XY(1024,768) / tree_sparkle_map.size * p
+      p = XY(1024,768) / star_sparkle_map.size * p
       s.setup_position(p)
 
       star_sparkles.add(s)
