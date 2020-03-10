@@ -13,14 +13,14 @@ else
     # Current folder is ProjectName/
     # This is being run from ProjectName/Plasmacore/
     Bootstrap.sync( "*", &exclude=@["LICENSE","README.md"], &keep_unused )
-    Bootstrap.sync( "Libraries/Box2D/**" )
-    Bootstrap.sync( "Libraries/ImageIO/**" )
-    Bootstrap.sync( "Libraries/Plasmacore/**" )
-    Bootstrap.sync( "Libraries/Rogue/AssetCompiler/**" )
-    Bootstrap.sync( "Libraries/Rogue/Plasmacore/**" )
     Bootstrap.sync( "Platforms/Android/plasmacore/src/main/java/org/plasmacore/*" )
     Bootstrap.sync( "Platforms/Android/plasmacore/src/main/cpp/*" )
     Bootstrap.sync( "Platforms/Android/Build.rogue" )
+
+    # Remove vestigial folders from old structure, if present.
+    delete( "Libraries/ImageIO" )
+    delete( "Libraries/Rogue/AssetCompiler" )
+    delete( "Libraries/Rogue/Plasmacore" )
 
     if (not File.exists("Project.depz"))
       File.save( "Project.depz",
@@ -28,6 +28,7 @@ else
          |prefix=https://github.com/AbePralle
          |checkout=master
          |default_actions=--init --update --ff --outdated
+         |
       )
     endIf
     run "depz"
@@ -36,6 +37,13 @@ else
     System.exit 1
   endIf
 endIf
+
+routine delete( filepath:String )
+  if (File.exists(filepath))
+    println "Deleting " + filepath
+    File.delete( filepath )
+  endIf
+endRoutine
 
 class Bootstrap [singleton]
   PROPERTIES
@@ -80,6 +88,7 @@ class Bootstrap [singleton]
            |prefix=https://github.com/AbePralle
            |checkout=BRANCH
            |default_actions=--init --update --ff --outdated
+           |
         depz = depz.replacing( "BRANCH", BRANCH )
         File.save( "Project.depz", depz )
       endIf
@@ -87,6 +96,7 @@ class Bootstrap [singleton]
 
       local files = Files( "Plasmacore", "**" )
       if (File.exists("README.md")) files.remove( "Plasmacore/README.md" )
+      files.remove( "Plasmacore/Libraries/**" )
       File.sync_from( files, ".", &keep_unused, &verbose )
 
       if (not File.exists(".gitignore"))
@@ -155,7 +165,7 @@ endClass
 
 routine default_gitignore->String
   return @|BuildLocal.rogue
-          |Plasmacore
+          |/Plasmacore
           |
           |# Vim
           |*.swp

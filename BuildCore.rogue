@@ -2,11 +2,11 @@ uses Geometry
 uses Bitmap
 uses XML
 
-#$ DEPENDENCIES     = Libraries/Rogue/AssetCompiler/*.rogue
+#$ DEPENDENCIES     = Plasmacore/Libraries/Rogue/AssetCompiler/*.rogue
+#$ ROGUEC_ARGS      = --libraries=Plasmacore/Libraries/Rogue
 
 #$ ROGUEC(macOS)    = Programs/RogueC-macOS
 #$ ROGUEC(Linux)    = roguec
-#$ ROGUEC_ARGS      = --libraries=Libraries/Rogue
 
 #$ LIBRARIES(macOS) = brew
 #$ LIBRARIES(macOS) = python3
@@ -52,8 +52,28 @@ routine rogo_ios
   Build.build( "iOS" )
 endRoutine
 
+routine rogo_ios_open
+  local listing = File.listing( "Platforms/iOS", "*.xcworkspace" )
+  if (listing.is_empty) listing = File.listing( "Platforms/iOS", "*.xcodeproj" )
+  if (listing.count)
+    execute ''open "$"'' (forEach in listing)
+  else
+    throw Error( "No .xcodeproj or .xcworkspace folders found!" )
+  endIf
+endRoutine
+
 routine rogo_macos
   Build.build( "macOS" )
+endRoutine
+
+routine rogo_macos_open
+  local listing = File.listing( "Platforms/macOS", "*.xcworkspace" )
+  if (listing.is_empty) listing = File.listing( "Platforms/macOS", "*.xcodeproj" )
+  if (listing.count)
+    execute ''open "$"'' (forEach in listing)
+  else
+    throw Error( "No .xcodeproj or .xcworkspace folders found!" )
+  endIf
 endRoutine
 
 routine rogo_linux
@@ -161,19 +181,26 @@ routine rogo_update
   endIf
 endRoutine
 
-routine rogo_web( run_after_building:String, browser:String )
+routine rogo_web_build
   Build.build( "Web" )
   run @|make -C Platforms/Web
-  if (run_after_building != "")
-    if (browser == "") browser = "chrome"
-    execute( "cd Build/Web && emrun --browser $ index.html" (browser) )
-  else
-    println @|Execute 'rogo web run' or 'rogo web run <browser-name>' to build for web and then run
-             |the game locally in the selected browser.
-             |
-             |'emrun --list_browsers' to see which browsers are available.  'chrome' is the default.
-  endIf
+  println @|Execute 'rogo web' or 'rogo web <browser-name>' to build for web and then run
+           |the game locally in the selected browser. Execute 'rogo web run' to run the previous
+           |build on a browser without recompiling.
+endRoutine
 
+routine rogo_web( browser:String )
+  Build.build( "Web" )
+  run @|make -C Platforms/Web
+  rogo_web_run( browser )
+endRoutine
+
+routine rogo_web_run( browser:String )
+  if (browser == "")
+    browser = "chrome"
+    println @|Defaulting to 'chrome'. 'emrun --list_browsers' to see which browsers are available.
+  endIf
+  execute( "cd Build/Web && emrun --browser $ index.html" (browser) )
 endRoutine
 
 help( "install_rogue", "Embeds Rogue locally to remove the dependency and freeze its version." )
@@ -323,6 +350,7 @@ class Build [essential singleton]
              |prefix=https://github.com/AbePralle
              |checkout=BRANCH
              |default_actions=--init --update --ff --outdated
+             |
           depz = depz.replacing( "BRANCH", BRANCH )
           File.save( "Project.depz", depz )
         endIf
@@ -357,8 +385,9 @@ class Build [essential singleton]
         others:                target += ",Desktop"
       endWhich
 
-      local cmd = ''$ --target=$ --gc=manual Source/Main.rogue Plasmacore --libraries=Libraries/Rogue --output=$/RogueProgram''...
-        (ROGUEC,target,output_folder)
+      local libs_folder = select{ File.is_folder("Plasmacore"):"Plasmacore/Libraries/Rogue" || "Libraries/Rogue" }
+      local cmd = ''$ --target=$ --gc=manual Source/Main.rogue Plasmacore --libraries=$ --output=$/RogueProgram''...
+        (ROGUEC,target,libs_folder,output_folder)
       if (Build.ide_mode)   cmd += " --ide"
       if (Build.DEBUG_MODE) cmd += " --debug"
       run( cmd )
@@ -411,6 +440,7 @@ class Build [essential singleton]
            |prefix=https://github.com/AbePralle
            |checkout=BRANCH
            |default_actions=--init --update --ff --outdated
+           |
         depz = depz.replacing( "BRANCH", BRANCH )
         File.save( "Project.depz", depz )
       endIf
@@ -471,6 +501,7 @@ class Build [essential singleton]
       if (ROGUE_STD_LIBS != "Libraries/Rogue")
         dependencies.add( File.listing("Libraries/Rogue","**",&absolute) )
       endIf
+      dependencies.add( File.listing("Plasmacore/Libraries/Rogue","**",&absolute) )
       dependencies.add( File.listing("Source", "**", &absolute) )
       dependencies.add( "Build.rogue" )
       dependencies.add( "BuildCore.rogue" )

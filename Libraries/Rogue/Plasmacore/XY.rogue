@@ -1,8 +1,0 @@
-uses Plasmacore
-
-augment XY
-  METHODS
-    method transform( m:Matrix )->XY
-      return m * this
-endAugment
-
