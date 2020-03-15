@@ -28,7 +28,7 @@ Run `rogo web run`.
 
 # About
 
-The Light Before Xmas began as an app for the original iPad written by Murphy McCauley at the end of 2010.  It was inspired by several similar games available on the web which were written in Flash and were therefore unplayable on the iPad.  The original app was never widely released, but nine years later, Murphy and Abe Pralle updated it for modern tablets, phones, and the web.
+The Light Before Xmas began as an app for the original iPad written by Murphy McCauley at the end of 2010.  It was inspired by several similar games available on the web which were written in Flash and were therefore unplayable on the iPad.  The original app was never widely released, but nine years later, Murphy and Abe Pralle updated it for modern tablets, phones, and the web.  The basic gameplay mechanic of The Light Before Xmas can be traced back to Zenji, a 1984 video game.  We thank its designer, Matthew Hubbard. 
 
 The Light Before Xmas is written in the Rogue programming language (originally using Rogue's predecessor, Slag) using the Plasmacore game programming framework.  Both Rogue and Plasmacore are open source software under the MIT license, and they are available on GitHub.
 
